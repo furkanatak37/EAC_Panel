@@ -1,0 +1,5 @@
+wwwroot\css\style.css
+wwwroot\js\rapor.js
+wwwroot\js\script.js
+wwwroot\rapor.html
+wwwroot\index.html

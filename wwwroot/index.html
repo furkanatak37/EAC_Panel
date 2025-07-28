@@ -1,0 +1,107 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDKS Mesai Takip Paneli</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/2.2.1/chartjs-plugin-annotation.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+</head>
+<body>
+
+    <div class="container">
+        <h1 class="page-header">PDKS Mesai Takip Paneli</h1>
+
+        <div class="dashboard-layout">
+
+            <div class="sidebar">
+                <h2>Kişi Listesi</h2>
+                <div class="filter-controls">
+                    <input type="text" id="adFiltre" placeholder="Ada göre filtrele...">
+                    <select id="departmanFiltre">
+                        <option value="">Tüm Departmanlar</option>
+                    </select>
+                </div>
+                <ul id="personelListesi">
+                </ul>
+            </div>
+
+            <div class="reports-section">
+                <div class="rapor-header">
+                    <h2 id="detayBaslik">Günlük Özet Raporları</h2>
+                    <input type="date" id="raporTarih">
+                </div>
+                <div class="rapor-kartlari">
+                    <div class="kart">
+                        <h3>Günün En'leri</h3>
+                        <div id="gunun-enleri-icerik"></div>
+                    </div>
+                    <div class="kart">
+                        <h3 class="kart-baslik">
+                            <span>Geç Gelenler (08:45 Sonrası)</span>
+                            <a href="#" id="gec-gelenler-detay-btn" class="kart-buton" target="_blank">Listele</a>
+                        </h3>
+                        <ul id="gec-gelenler-listesi"></ul>
+                    </div>
+
+
+                    <div class="kart">
+                        <h3 class="kart-baslik">
+                            <span>Fazla Mesai Yapanlar (17:30 Sonrası)</span>
+                            <a href="#" id="fazla-mesai-detay-btn" class="kart-buton" target="_blank">Listele</a>
+                        </h3>
+                       <ul id="fazla-mesai-listesi"></ul>
+                    </div>
+
+
+
+
+
+
+                    <div class="kart">
+                        <h3>Departman Analizi</h3>
+                        <div id="departman-analiz-icerik"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-section">
+                <hr class="rapor-ayrac">
+                <h2 id="kisiDetayBaslik" style="display:none;">Kişi Mesai Detayları</h2>
+
+                <div class="details-wrapper">
+
+                    <div class="kart" id="personel-info-karti" style="display:none;">
+                        <h3>Personel İnfo</h3>
+                        <div id="personel-info-icerik"></div>
+                    </div>
+
+                    <div class="charts-wrapper" id="anaGrafikAlani" style="display:none;">
+                        <div class="chart-container" id="barChartContainer">
+                            <div class="chart-controls">
+                                <label for="gunSecici">Grafikten bir gün seçin:</label>
+                                <select id="gunSecici"></select>
+                            </div>
+                            <canvas id="mesaiChart"></canvas>
+                        </div>
+                        <div class="chart-container" id="donutChartContainer">
+                            <canvas id="durumChart"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div id="gunlukDetay" class="gunluk-detay-kutusu" style="display:none;">
+                    Detayları görmek için grafikte bir güne tıklayın.
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <script src="js/script.js" defer></script>
+
+</body>
+</html>
