@@ -1,6 +1,27 @@
 [
   {
     "ContainingType": "WebApplication1.Controllers.DataController",
+    "Method": "GetAralikDetaylari",
+    "RelativePath": "api/Data/aralik-detaylari",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "baslangic",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      },
+      {
+        "Name": "bitis",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebApplication1.Controllers.DataController",
     "Method": "GetAralikRaporu",
     "RelativePath": "api/Data/aralik-raporu",
     "HttpMethod": "GET",

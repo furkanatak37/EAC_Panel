@@ -5,15 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detaylı Rapor</title>
     <link rel="stylesheet" href="css/style.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
     <div class="container">
         <div class="rapor-sayfasi-header">
             <h1 class="page-header" id="rapor-baslik">Rapor Yükleniyor...</h1>
-            <a href="index.html" class="geri-don-butonu">&larr; Ana Panele Dön</a>
+
+            <div class="buton-grup">
+                <button id="excel-aktar-btn" class="rapor-butonu">Excel'e Aktar</button>
+                <button id="pdf-kaydet-btn" class="rapor-butonu">PDF Olarak Kaydet</button>
+                <a href="index.html" class="geri-don-butonu">&larr; Ana Panele Dön</a>
+            </div>
         </div>
 
-        <table class="detay-tablosu">
+        <table class="detay-tablosu" id="rapor-tablosu">
             <thead id="rapor-tablo-baslik">
             </thead>
             <tbody id="rapor-tablo-govdesi">

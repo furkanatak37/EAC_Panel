@@ -79,3 +79,4 @@ C:\Users\mfatak\source\repos\WebApplication1\WebApplication1\obj\Debug\net8.0\re
 C:\Users\mfatak\source\repos\WebApplication1\WebApplication1\obj\Debug\net8.0\pdks_proje.pdb
 C:\Users\mfatak\source\repos\WebApplication1\WebApplication1\obj\Debug\net8.0\pdks_proje.genruntimeconfig.cache
 C:\Users\mfatak\source\repos\WebApplication1\WebApplication1\obj\Debug\net8.0\ref\pdks_proje.dll
+C:\Users\mfatak\source\repos\WebApplication1\WebApplication1\obj\Debug\net8.0\pdks_proje.sourcelink.json

@@ -17,7 +17,13 @@ const gecGelenlerListesi = document.getElementById('gec-gelenler-listesi');
 const departmanAnalizIcerik = document.getElementById('departman-analiz-icerik');
 const fazlaMesaiListesi = document.getElementById('fazla-mesai-listesi');
 // Kişi detayları için elementler
+const baslangicTarihInput = document.getElementById('baslangicTarih');
+const bitisTarihInput = document.getElementById('bitisTarih');
+const raporOlusturBtn = document.getElementById('raporOlusturBtn');
+const departmanDetayBtn = document.getElementById('departman-detay-btn');
 
+// Olay dinleyicilerini güncelleyin (raporTarihInput'u kaldırıp raporOlusturBtn'yi ekleyin)
+raporOlusturBtn.addEventListener('click', guncelleAralikRaporlari);
 
 const gecGelenlerDetayBtn = document.getElementById('gec-gelenler-detay-btn');
 const fazlaMesaiDetayBtn = document.getElementById('fazla-mesai-detay-btn');
@@ -97,7 +103,7 @@ document.addEventListener('DOMContentLoaded', initializePage);
 adFiltreInput.addEventListener('input', applyFilters);
 gunSeciciSelect.addEventListener('change', handleGunSeciciChange);
 departmanFiltreSelect.addEventListener('change', applyFilters);
-raporTarihInput.addEventListener('change', () => guncelleGunlukRaporlar(raporTarihInput.value));
+//raporTarihInput.addEventListener('change', () => guncelleGunlukRaporlar(raporTarihInput.value));
 /**
  * Fazla mesai yapanları listeler.
  * @param {Array} personelData - O güne ait tüm personel verisi.
@@ -173,13 +179,19 @@ function handleGunSeciciChange() {
  * Sayfa ilk yüklendiğinde çalışacak ana fonksiyon.
  */
 function initializePage() {
-    const today = new Date().toISOString().split('T')[0];
-    raporTarihInput.value = today; // Tarih seçiciyi bugüne ayarlar ama raporu getirmez.
+    // Varsayılan olarak bu ayın başlangıcını ve sonunu ayarla
+    const today = new Date();
+    const ayinIlkGunu = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+    const ayinSonGunu = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
 
-    setInitialReportState(); // Rapor alanlarına başlangıç mesajını yazar.
+    baslangicTarihInput.value = ayinIlkGunu;
+    bitisTarihInput.value = ayinSonGunu;
 
-    personelleriGetir(); // Personel listesini her zamanki gibi doldurur.
+    setInitialReportState(); // Başlangıç mesajlarını göster
+    personelleriGetir();
+    guncelleAralikRaporlari(); // Sayfa ilk açıldığında varsayılan aralık için raporu getir
 }
+
 /**
  * Rapor kartlarını başlangıç durumuna getirir ve kullanıcıya mesaj gösterir.
  */
@@ -215,43 +227,138 @@ function personelleriGetir() {
  */
 // guncelleGunlukRaporlar fonksiyonunun içini aşağıdaki gibi güncelleyin
 
-async function guncelleGunlukRaporlar(tarihString) {
-    // Yükleniyor durumunu ayarla (yeni kart eklendi)
+// script.js dosyanızdaki mevcut guncelleAralikRaporlari ve ilgili render fonksiyonlarını
+// aşağıdaki tam ve güncel halleriyle değiştirin.
+
+async function guncelleAralikRaporlari() {
+    const baslangic = baslangicTarihInput.value;
+    const bitis = bitisTarihInput.value;
+    if (!baslangic || !bitis || new Date(baslangic) > new Date(bitis)) {
+        alert("Lütfen geçerli bir başlangıç ve bitiş tarihi seçin.");
+        return;
+    }
+    gecGelenlerDetayBtn.href = `rapor.html?rapor=gec&baslangic=${baslangic}&bitis=${bitis}`;
+    fazlaMesaiDetayBtn.href = `rapor.html?rapor=mesai&baslangic=${baslangic}&bitis=${bitis}`;
+    departmanDetayBtn.href = `rapor.html?rapor=departman&baslangic=${baslangic}&bitis=${bitis}`;
+
     gecGelenlerListesi.innerHTML = '<li>Yükleniyor...</li>';
+    fazlaMesaiListesi.innerHTML = '<li>Yükleniyor...</li>';
     gununEnleriIcerik.innerHTML = '<p>Yükleniyor...</p>';
     departmanAnalizIcerik.innerHTML = '<p>Yükleniyor...</p>';
-    fazlaMesaiListesi.innerHTML = '<li>Yükleniyor...</li>'; // EKLENDİ
-    
-    gecGelenlerDetayBtn.href = `rapor.html?rapor=gec&tarih=${tarihString}`;
-    fazlaMesaiDetayBtn.href = `rapor.html?rapor=mesai&tarih=${tarihString}`;
-
 
     try {
-        const response = await fetch(`/api/data/gunluk-ozet?tarih=${tarihString}`);
-        if (!response.ok) throw new Error('API verisi alınamadı.');
+        const response = await fetch(`/api/data/aralik-raporu?baslangic=${baslangic}&bitis=${bitis}`);
+        if (!response.ok) throw new Error(`API Hatası: ${response.status}`);
         const data = await response.json();
 
-        if (data.length === 0) {
-            gecGelenlerListesi.innerHTML = '<li>Veri yok.</li>';
-            gununEnleriIcerik.innerHTML = '<p>Veri yok.</p>';
-            departmanAnalizIcerik.innerHTML = '<p>Veri yok.</p>';
-            fazlaMesaiListesi.innerHTML = '<li>Veri yok.</li>'; // EKLENDİ
-            return;
-        }
-
-        renderGecGelenler(data);
-        renderGununEnleri(data);
-        renderDepartmanAnalizi(data);
-        renderFazlaMesai(data); // EKLENDİ
+        // Gelen verinin yeni yapısına göre ilgili render fonksiyonlarını çağır
+        renderGecKalanlarAralik(data.personelOzetleri || []);
+        renderFazlaMesaiAralik(data.personelOzetleri || []);
+        renderAraliginEnleri(data.araliginEnleri);
+        renderDepartmanAnaliziAralik(data.departmanOzetleri || []);
 
     } catch (error) {
-        console.error("Raporlar güncellenirken hata:", error);
-        // Hata durumu güncellendi
-        gecGelenlerListesi.innerHTML = '<li>Hata!</li>';
+        console.error("Aralık raporu alınırken hata:", error);
+        const errorMessage = '<li>Rapor alınamadı.</li>';
+        gecGelenlerListesi.innerHTML = errorMessage;
+        fazlaMesaiListesi.innerHTML = errorMessage;
         gununEnleriIcerik.innerHTML = '<p>Hata!</p>';
         departmanAnalizIcerik.innerHTML = '<p>Hata!</p>';
-        fazlaMesaiListesi.innerHTML = '<li>Hata!</li>'; // EKLENDİ
     }
+}
+
+function renderGecKalanlarAralik(personelOzetleri) {
+    const gecKalanlar = personelOzetleri.filter(p => (p.gecKalmaSayisi || p.GecKalmaSayisi) > 0);
+    gecGelenlerListesi.innerHTML = '';
+    if (gecKalanlar.length === 0) {
+        gecGelenlerListesi.innerHTML = '<li>Bu aralıkta geç kalan personel bulunamadı.</li>';
+        return;
+    }
+    gecKalanlar.sort((a, b) => (b.gecKalmaSayisi || b.GecKalmaSayisi) - (a.gecKalmaSayisi || a.GecKalmaSayisi));
+    gecKalanlar.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = `${p.Ad || p.ad} ${p.Soyad || p.soyad} (${p.gecKalmaSayisi || p.GecKalmaSayisi} kez)`;
+        gecGelenlerListesi.appendChild(li);
+    });
+}
+
+function renderFazlaMesaiAralik(personelOzetleri) {
+    const mesaiYapanlar = personelOzetleri.filter(p => (p.toplamFazlaMesaiDakika || p.ToplamFazlaMesaiDakika) > 0);
+    fazlaMesaiListesi.innerHTML = '';
+    if (mesaiYapanlar.length === 0) {
+        fazlaMesaiListesi.innerHTML = '<li>Bu aralıkta fazla mesai yapan personel bulunamadı.</li>';
+        return;
+    }
+    mesaiYapanlar.sort((a, b) => (b.toplamFazlaMesaiDakika || b.ToplamFazlaMesaiDakika) - (a.toplamFazlaMesaiDakika || a.ToplamFazlaMesaiDakika));
+    mesaiYapanlar.forEach(p => {
+        const li = document.createElement('li');
+        const mesaiDakika = p.toplamFazlaMesaiDakika || p.ToplamFazlaMesaiDakika;
+        const saat = Math.floor(mesaiDakika / 60);
+        const dakika = mesaiDakika % 60;
+        let mesaiSuresi = '';
+        if (saat > 0) mesaiSuresi += `${saat} saat `;
+        if (dakika > 0) mesaiSuresi += `${dakika} dakika`;
+        li.textContent = `${p.Ad || p.ad} ${p.Soyad || p.soyad} (+${mesaiSuresi.trim()})`;
+        fazlaMesaiListesi.appendChild(li);
+    });
+}
+
+/**
+ * "Aralığın En'leri" kartını doldurur.
+ */
+// script.js dosyanızdaki renderAraliginEnleri fonksiyonunu bununla değiştirin
+
+/**
+ * "Aralığın En'leri" kartını her gün için ayrı ayrı doldurur.
+ */
+function renderAraliginEnleri(enlerData) {
+    gununEnleriIcerik.innerHTML = ''; // Önceki içeriği temizle
+
+    if (!enlerData || enlerData.length === 0) {
+        gununEnleriIcerik.innerHTML = '<p>Bu aralık için özet bilgi bulunamadı.</p>';
+        return;
+    }
+
+    // Her gün için bir HTML bloğu oluşturup ekleyelim
+    const fragment = document.createDocumentFragment();
+    enlerData.forEach(gununEni => {
+        const gunDiv = document.createElement('div');
+        gunDiv.className = 'gunun-eni-item'; // Stil için class ataması
+
+        const tarih = new Date(gununEni.tarih).toLocaleDateString('tr-TR', { weekday: 'long', day: '2-digit', month: 'long' });
+        const erkenSaat = new Date(gununEni.enErkenGelisSaati).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+        const gecSaat = new Date(gununEni.enGecCikisSaati).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+        gunDiv.innerHTML = `
+            <p class="gunun-eni-tarih"><strong>${tarih}</strong></p>
+            <p><strong>Erken Gelen:</strong> ${gununEni.enErkenGelenIsim} (${erkenSaat})</p>
+            <p><strong>Geç Çıkan:</strong> ${gununEni.enGecCikanIsim} (${gecSaat})</p>
+        `;
+        fragment.appendChild(gunDiv);
+    });
+
+    gununEnleriIcerik.appendChild(fragment);
+}
+
+/**
+ * "Departman Analizi" kartını doldurur.
+ */
+function renderDepartmanAnaliziAralik(departmanOzetleri) {
+    departmanAnalizIcerik.innerHTML = '';
+    if (departmanOzetleri.length === 0) {
+        departmanAnalizIcerik.innerHTML = '<p>Analiz edilecek departman verisi yok.</p>';
+        return;
+    }
+
+    departmanOzetleri.forEach(dep => {
+        const p = document.createElement('p');
+        // SQL'den gelen 'HH:mm:ss.fffffff' formatını 'HH:mm' olarak göstermek için substring kullanıyoruz.
+        const ortGiris = dep.ortalamaGiris.substring(0, 5);
+        const ortCikis = dep.ortalamaCikis.substring(0, 5);
+
+        p.innerHTML = `<strong>${dep.departman} (${dep.kisiSayisi} kişi):</strong><br>Ort. Giriş: ${ortGiris} | Ort. Çıkış: ${ortCikis}`;
+        departmanAnalizIcerik.appendChild(p);
+    });
 }
 
 /**
@@ -331,7 +438,7 @@ function populateDepartmentFilter() {
 function renderGecGelenler(gecPersonelData) {
     const gecGelenler = gecPersonelData.filter(p => {
         const girisSaati = new Date(p.ilkGiris);
-        const gecGirisSiniri = new Date(girisSaati).setHours(8, 45, 0);
+        const gecGirisSiniri = new Date(girisSaati).setHours(8, 30, 0);
         return girisSaati > gecGirisSiniri;
     });
     gecGelenlerListesi.innerHTML = '';
@@ -386,7 +493,7 @@ function displayDailyDetails(secilenGun) {
     const tarih = new Date(secilenGun.Tarih || secilenGun.tarih);
     const ilkGiris = new Date(secilenGun.IlkGiris || secilenGun.ilkGiris);
     const sonCikis = new Date(secilenGun.SonCikis || secilenGun.sonCikis);
-    const gecGirisSiniri = new Date(tarih).setHours(8, 45, 0);
+    const gecGirisSiniri = new Date(tarih).setHours(8, 30, 0);
     const erkenCikisSiniri = new Date(tarih).setHours(17, 10, 0);
     let durumMesaji = '';
     if (ilkGiris > gecGirisSiniri) durumMesaji += 'Geç geldi. ';
@@ -416,7 +523,7 @@ function processChartData(apiData) {
         const ilkGiris = new Date(gunlukVeri.IlkGiris || gunlukVeri.ilkGiris);
         const sonCikis = new Date(gunlukVeri.SonCikis || gunlukVeri.sonCikis);
         const toplamMesai = gunlukVeri.ToplamMesaiDakika || gunlukVeri.toplamMesaiDakika;
-        const gecGirisSiniri = new Date(tarih).setHours(8, 45, 0);
+        const gecGirisSiniri = new Date(tarih).setHours(8, 30, 0);
         const erkenCikisSiniri = new Date(tarih).setHours(17, 10, 0);
         const isEksik = ilkGiris > gecGirisSiniri || sonCikis < erkenCikisSiniri;
         barData.tarihler.push(tarih.toLocaleDateString('tr-TR'));
@@ -450,7 +557,7 @@ async function fetchAndDisplayPersonelInfo(userId) {
         const telefon = infoData.tel || 'N/A';
         const ad = infoData.ad;
         const soyad = infoData.soyad;
-       
+
 
         const infoHtml = `
           <p><strong>Ad:</strong> ${ad}</p>

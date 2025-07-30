@@ -31,7 +31,7 @@ namespace WebApplication1.Controllers
             }
         }
 
-       
+
 
         [HttpGet("getinfo/{userId}")]
         public IActionResult Getinfo(int userId)
@@ -87,7 +87,7 @@ namespace WebApplication1.Controllers
 
 
 
-      
+
         }
 
         [HttpGet("personel-mesai")]
@@ -100,24 +100,32 @@ namespace WebApplication1.Controllers
                 conn.Open();
 
                 string query = @"
-                SELECT
-                    S.UserID,
-                    S.Ad,
-                    S.Soyad,
-                    CONVERT(date, P.EventTime) AS Tarih,
-                    MIN(CASE WHEN P.TerminalID % 2 = 1 THEN P.EventTime END) AS IlkGiris,
-                    MAX(CASE WHEN P.TerminalID % 2 = 0 THEN P.EventTime END) AS SonCikis,
-                    DATEDIFF(MINUTE,
-                        MIN(CASE WHEN P.TerminalID % 2 = 1 THEN P.EventTime END),
-                        MAX(CASE WHEN P.TerminalID % 2 = 0 THEN P.EventTime END)
-                    ) AS ToplamMesaiDakika
-                FROM Pool P
-                JOIN Sicil S ON CAST(P.SicilID AS INT) = S.UserID
-                GROUP BY S.UserID, S.Ad, S.Soyad, CONVERT(date, P.EventTime)
-                HAVING
-                    MIN(CASE WHEN P.TerminalID % 2 = 1 THEN P.EventTime END) IS NOT NULL AND
-                    MAX(CASE WHEN P.TerminalID % 2 = 0 THEN P.EventTime END) IS NOT NULL AND
-                    MIN(CASE WHEN P.TerminalID % 2 = 1 THEN P.EventTime END) < MAX(CASE WHEN P.TerminalID % 2 = 0 THEN P.EventTime END)
+SELECT
+    S.UserID,
+    S.Ad,
+    S.Soyad,
+    CONVERT(date, P.EventTime) AS Tarih,
+    
+    -- DÜZELTME: Sadece o günkü en erken saat alınıyor
+    MIN(P.EventTime) AS IlkGiris,
+    
+    -- DÜZELTME: Sadece o günkü en geç saat alınıyor
+    MAX(P.EventTime) AS SonCikis,
+    
+    DATEDIFF(MINUTE,
+        MIN(P.EventTime),
+        MAX(P.EventTime)
+    ) AS ToplamMesaiDakika
+FROM
+    Pool P
+JOIN
+    Sicil S ON CAST(P.UserID AS INT) = S.UserID
+-- DÜZELTME: Terminaller tablosuna artık gerek yok
+GROUP BY
+    S.UserID, S.Ad, S.Soyad, CONVERT(date, P.EventTime)
+-- DÜZELTME: HAVING şartı basitleştirildi
+HAVING
+    MIN(P.EventTime) < MAX(P.EventTime);
                 ";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -153,27 +161,39 @@ namespace WebApplication1.Controllers
 
                 // Sadece istenen personeli getirmesi için WHERE şartı eklendi
                 string query = @"
-            SELECT
-                S.UserID,
-                S.Ad,
-                S.Soyad,
-                B.Ad as 'departman',
-                CONVERT(date, P.EventTime) AS Tarih,
-                MIN(CASE WHEN P.TerminalID % 2 = 1 THEN P.EventTime END) AS IlkGiris,
-                MAX(CASE WHEN P.TerminalID % 2 = 0 THEN P.EventTime END) AS SonCikis,
-                DATEDIFF(MINUTE,
-                    MIN(CASE WHEN P.TerminalID % 2 = 1 THEN P.EventTime END),
-                    MAX(CASE WHEN P.TerminalID % 2 = 0 THEN P.EventTime END)
-                ) AS ToplamMesaiDakika
-            FROM Pool P
-            JOIN Sicil S ON CAST(P.SicilID AS INT) = S.UserID
-            LEFT JOIN cbo_bolum B ON S.Bolum = B.ID
-            WHERE S.UserID = @UserId -- DÜZELTME: Bu satır eklendi
-            GROUP BY S.UserID, S.Ad, S.Soyad, B.Ad, CONVERT(date, P.EventTime)
-            HAVING
-                MIN(CASE WHEN P.TerminalID % 2 = 1 THEN P.EventTime END) IS NOT NULL AND
-                MAX(CASE WHEN P.TerminalID % 2 = 0 THEN P.EventTime END) IS NOT NULL AND
-                MIN(CASE WHEN P.TerminalID % 2 = 1 THEN P.EventTime END) < MAX(CASE WHEN P.TerminalID % 2 = 0 THEN P.EventTime END)
+SELECT
+    S.UserID,
+    S.Ad,
+    S.Soyad,
+    B.Ad AS 'departman',
+    CONVERT(date, P.EventTime) AS Tarih,
+    
+    -- DÜZELTME: Sadece o günkü en erken saat alınıyor
+    MIN(P.EventTime) AS IlkGiris,
+    
+    -- DÜZELTME: Sadece o günkü en geç saat alınıyor
+    MAX(P.EventTime) AS SonCikis,
+    
+    -- DÜZELTME: DATEDIFF de basit MIN/MAX kullanacak şekilde güncellendi
+    DATEDIFF(MINUTE,
+        MIN(P.EventTime),
+        MAX(P.EventTime)
+    ) AS ToplamMesaiDakika
+FROM
+    Pool P
+JOIN
+    Sicil S ON CAST(P.UserID AS INT) = S.UserID
+LEFT JOIN
+    cbo_bolum B ON S.Bolum = B.ID
+
+WHERE
+    S.UserID = @userId -- Kullanıcı filtresi korunuyor
+GROUP BY
+    S.UserID, S.Ad, S.Soyad, B.Ad, CONVERT(date, P.EventTime)
+
+HAVING
+    MIN(P.EventTime) < MAX(P.EventTime);
+
         ";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -276,14 +296,6 @@ LEFT JOIN
             return Ok(result);
         }
 
-        // DataController.cs dosyanıza bu yeni metodu ekleyin
-
-        // DataController.cs dosyasındaki ilgili metot
-
-        // DataController.cs dosyasındaki ilgili metot
-
-        // DataController.cs dosyasındaki ilgili metot
-
         [HttpGet("gunluk-ozet")]
         public IActionResult GetGunlukOzet([FromQuery] DateTime? tarih)
         {
@@ -294,49 +306,31 @@ LEFT JOIN
             {
                 conn.Open();
 
-                // YENİ: FazlaMesaiDakika sütunu eklendi
+                // DÜZELTME: Sorgu, TerminalID'ye bakmadan, sadece en erken ve en geç saate bakacak şekilde basitleştirildi.
                 string query = @"
-            -- Son çıkış saatini bir CTE içinde hesaplayarak sorguyu basitleştirelim
-           WITH CikisZamanlari AS (
-    SELECT
-        P.SicilID,
-        CONVERT(date, P.EventTime) AS Tarih,
-        MAX(CASE WHEN P.TerminalID % 2 = 0 THEN P.EventTime END) AS SonCikis
-    FROM Pool P
-    WHERE CONVERT(date, P.EventTime) = @Tarih
-    GROUP BY P.SicilID, CONVERT(date, P.EventTime)
-)
-SELECT
-    S.UserID,
-    S.Ad,
-    S.Soyad,
-    B.Ad as 'departman',
-    MIN(CASE WHEN P.TerminalID % 2 = 1 THEN P.EventTime END) AS IlkGiris,
-    CZ.SonCikis,
-    
-    -- === DÜZELTİLMİŞ FAZLA MESAİ HESAPLAMA MANTIĞI ===
-    CASE
-        -- DÜZELTME: Uyumlu tarih/saat oluşturmak için DATEADD kullanıldı
-        WHEN CZ.SonCikis > DATEADD(minute, 30, DATEADD(hour, 17, CAST(CONVERT(date, CZ.SonCikis) AS datetime)))
-        THEN DATEDIFF(
-            MINUTE,
-            -- DÜZELTME: Uyumlu tarih/saat oluşturmak için DATEADD kullanıldı
-            DATEADD(minute, 30, DATEADD(hour, 17, CAST(CONVERT(date, CZ.SonCikis) AS datetime))),
-            CZ.SonCikis
-        )
-        ELSE 0
-    END AS FazlaMesaiDakika
-    
-FROM Pool P
-JOIN Sicil S ON CAST(P.SicilID AS INT) = S.UserID
-LEFT JOIN cbo_bolum B ON S.Bolum = B.ID
-JOIN CikisZamanlari CZ ON P.SicilID = CZ.SicilID AND CONVERT(date, P.EventTime) = CZ.Tarih
-WHERE CONVERT(date, P.EventTime) = @Tarih
-GROUP BY S.UserID, S.Ad, S.Soyad, B.Ad, CZ.SonCikis
-HAVING
-    MIN(CASE WHEN P.TerminalID % 2 = 1 THEN P.EventTime END) IS NOT NULL AND
-    CZ.SonCikis IS NOT NULL AND
-    MIN(CASE WHEN P.TerminalID % 2 = 1 THEN P.EventTime END) < CZ.SonCikis;
+            SELECT
+                S.UserID,
+                S.Ad,
+                S.Soyad,
+                B.Ad as 'departman',
+                MIN(P.EventTime) AS IlkGiris, -- Sadece o günkü en erken saat
+                MAX(P.EventTime) AS SonCikis,  -- Sadece o günkü en geç saat
+                CASE
+                    WHEN MAX(P.EventTime) > DATEADD(minute, 30, DATEADD(hour, 17, CAST(CONVERT(date, P.EventTime) AS datetime)))
+                    THEN DATEDIFF(
+                        MINUTE,
+                        DATEADD(minute, 30, DATEADD(hour, 17, CAST(CONVERT(date, P.EventTime) AS datetime))),
+                        MAX(P.EventTime)
+                    )
+                    ELSE 0
+                END AS FazlaMesaiDakika
+            FROM Pool P
+            JOIN Sicil S ON CAST(P.UserID AS INT) = S.UserID
+            LEFT JOIN cbo_bolum B ON S.Bolum = B.ID
+            WHERE CONVERT(date, P.EventTime) = @Tarih
+            GROUP BY S.UserID, S.Ad, S.Soyad, B.Ad, CONVERT(date, P.EventTime)
+            -- HAVING şartı, gün içinde en az iki farklı hareket olmasını sağlar
+            HAVING MIN(P.EventTime) < MAX(P.EventTime);
         ";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -355,7 +349,6 @@ HAVING
                                 Departman = reader["departman"],
                                 IlkGiris = reader["IlkGiris"],
                                 SonCikis = reader["SonCikis"],
-                                // YENİ: Fazla mesai verisini de modele ekle
                                 FazlaMesaiDakika = reader["FazlaMesaiDakika"]
                             });
                         }
@@ -366,54 +359,73 @@ HAVING
         }
 
 
-        // DataController.cs dosyanıza bu yeni metodu ekleyin
-
         [HttpGet("aralik-raporu")]
         public IActionResult GetAralikRaporu([FromQuery] DateTime baslangic, [FromQuery] DateTime bitis)
         {
             var personelOzetleri = new List<object>();
+            var araliginEnleri = new List<object>();
+            var departmanOzetleri = new List<object>();
 
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
 
-                // Bu sorgu, belirtilen tarih aralığındaki her personel için
-                // toplam geç kalma sayısını ve toplam fazla mesaiyi hesaplar.
+                // DÜZELTME: Sorgunun temelindeki #GunlukMesai tablosu, artık TerminalID'ye bakmayacak şekilde basitleştirildi.
                 string query = @"
-            -- 1. Her bir gün için giriş, çıkış ve durumları hesaplayan bir temel sorgu oluşturalım (CTE).
-            WITH GunlukVeriler AS (
-                SELECT
-                    S.UserID,
-                    S.Ad,
-                    S.Soyad,
-                    B.Ad as 'departman',
-                    MIN(P.EventTime) AS IlkGiris,
-                    MAX(P.EventTime) AS SonCikis,
-                    CASE 
-                        WHEN MIN(P.EventTime) > DATEADD(minute, 45, DATEADD(hour, 8, CAST(CONVERT(date, P.EventTime) AS datetime)))
-                        THEN 1 ELSE 0 
-                    END AS GecKalma,
-                    CASE
-                        WHEN MAX(P.EventTime) > DATEADD(minute, 30, DATEADD(hour, 17, CAST(CONVERT(date, P.EventTime) AS datetime)))
-                        THEN DATEDIFF(MINUTE, DATEADD(minute, 30, DATEADD(hour, 17, CAST(CONVERT(date, P.EventTime) AS datetime))), MAX(P.EventTime))
-                        ELSE 0
-                    END AS FazlaMesaiDakika
-                FROM Pool P
-                JOIN Sicil S ON CAST(P.SicilID AS INT) = S.UserID
-                LEFT JOIN cbo_bolum B ON S.Bolum = B.ID
-                WHERE CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
-                GROUP BY S.UserID, S.Ad, S.Soyad, B.Ad, CONVERT(date, P.EventTime)
-            )
-            -- 2. Bu günlük verileri personellere göre gruplayarak özet sonuçları alalım.
+            IF OBJECT_ID('tempdb..#GunlukMesai') IS NOT NULL
+                DROP TABLE #GunlukMesai;
+
+            -- 1. ADIM: Temel veri, TerminalID'ye bakılmaksızın en erken ve en geç saatlere göre oluşturuluyor.
             SELECT
-                UserID,
-                Ad,
-                Soyad,
-                departman,
-                SUM(GecKalma) AS GecKalmaSayisi,
-                SUM(FazlaMesaiDakika) AS ToplamFazlaMesaiDakika
-            FROM GunlukVeriler
+                S.UserID,
+                S.Ad,
+                S.Soyad,
+                B.Ad AS departman,
+                CONVERT(date, P.EventTime) AS Tarih,
+                MIN(P.EventTime) AS IlkGiris, -- Sadece en erken saat
+                MAX(P.EventTime) AS SonCikis  -- Sadece en geç saat
+            INTO #GunlukMesai
+            FROM Pool P
+            JOIN Sicil S ON CAST(P.UserID AS INT) = S.UserID
+            LEFT JOIN cbo_bolum B ON S.Bolum = B.ID
+            WHERE CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
+            GROUP BY S.UserID, S.Ad, S.Soyad, B.Ad, CONVERT(date, P.EventTime)
+            HAVING MIN(P.EventTime) < MAX(P.EventTime); -- Gün içinde en az iki farklı hareket olmalı
+
+            -- SORGU 1: Personel Bazlı Özetler (Bu sorgu aynı kalabilir, #GunlukMesai'den besleniyor)
+            SELECT
+                UserID, Ad, Soyad, departman,
+                SUM(CASE WHEN IlkGiris > DATEADD(minute, 30, DATEADD(hour, 8, CAST(Tarih AS datetime))) THEN 1 ELSE 0 END) AS GecKalmaSayisi,
+                SUM(CASE WHEN SonCikis > DATEADD(minute, 30, DATEADD(hour, 17, CAST(Tarih AS datetime))) THEN DATEDIFF(MINUTE, DATEADD(minute, 30, DATEADD(hour, 17, CAST(Tarih AS datetime))), SonCikis) ELSE 0 END) AS ToplamFazlaMesaiDakika
+            FROM #GunlukMesai
             GROUP BY UserID, Ad, Soyad, departman;
+
+            -- SORGU 2: Aralığın En'leri (Bu sorgu aynı kalabilir, #GunlukMesai'den besleniyor)
+            WITH Numaralandirilmis AS (
+                SELECT *,
+                    ROW_NUMBER() OVER(PARTITION BY Tarih ORDER BY IlkGiris ASC) as rn_erken,
+                    ROW_NUMBER() OVER(PARTITION BY Tarih ORDER BY SonCikis DESC) as rn_gec
+                FROM #GunlukMesai
+            )
+            SELECT
+                E.Tarih,
+                E.Ad + ' ' + E.Soyad AS EnErkenGelenIsim,
+                E.IlkGiris AS EnErkenGelisSaati,
+                G.Ad + ' ' + G.Soyad AS EnGecCikanIsim,
+                G.SonCikis AS EnGecCikisSaati
+            FROM Numaralandirilmis E
+            JOIN Numaralandirilmis G ON E.Tarih = G.Tarih
+            WHERE E.rn_erken = 1 AND G.rn_gec = 1
+            ORDER BY E.Tarih;
+
+            -- SORGU 3: Departman Bazlı Analizler (Bu sorgu aynı kalabilir, #GunlukMesai'den besleniyor)
+            SELECT
+                ISNULL(departman, 'Belirtilmemiş') AS Departman,
+                COUNT(DISTINCT UserID) as KisiSayisi,
+                CONVERT(time, DATEADD(ms, AVG(CAST(DATEDIFF(ms, '00:00:00', CONVERT(time, IlkGiris)) AS BIGINT)), '00:00:00')) AS OrtalamaGiris,
+                CONVERT(time, DATEADD(ms, AVG(CAST(DATEDIFF(ms, '00:00:00', CONVERT(time, SonCikis)) AS BIGINT)), '00:00:00')) AS OrtalamaCikis
+            FROM #GunlukMesai
+            GROUP BY departman;
         ";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -423,6 +435,7 @@ HAVING
 
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
+                        // 1. Sonuç Seti: Personel Özetleri
                         while (reader.Read())
                         {
                             personelOzetleri.Add(new
@@ -435,28 +448,118 @@ HAVING
                                 ToplamFazlaMesaiDakika = reader["ToplamFazlaMesaiDakika"]
                             });
                         }
+
+                        // 2. Sonuç Setine Geç
+                        if (reader.NextResult())
+                        {
+                            while (reader.Read())
+                            {
+                                araliginEnleri.Add(new
+                                {
+                                    Tarih = reader["Tarih"],
+                                    EnErkenGelenIsim = reader["EnErkenGelenIsim"],
+                                    EnErkenGelisSaati = reader["EnErkenGelisSaati"],
+                                    EnGecCikanIsim = reader["EnGecCikanIsim"],
+                                    EnGecCikisSaati = reader["EnGecCikisSaati"]
+                                });
+                            }
+                        }
+
+                        // 3. Sonuç Setine Geç
+                        if (reader.NextResult())
+                        {
+                            while (reader.Read())
+                            {
+                                departmanOzetleri.Add(new
+                                {
+                                    Departman = reader["Departman"],
+                                    KisiSayisi = reader["KisiSayisi"],
+                                    OrtalamaGiris = reader["OrtalamaGiris"],
+                                    OrtalamaCikis = reader["OrtalamaCikis"]
+                                });
+                            }
+                        }
                     }
                 }
             }
-            // NOT: "Aralığın En'leri" ve "Departman Analizi" için ayrı sorgular da buraya eklenebilir.
-            // Şimdilik bu verileri frontend'de hesaplayacağız.
-            return Ok(personelOzetleri);
+
+            var finalResult = new
+            {
+                PersonelOzetleri = personelOzetleri,
+                AraliginEnleri = araliginEnleri,
+                DepartmanOzetleri = departmanOzetleri
+            };
+
+            return Ok(finalResult);
+        }
+
+
+
+
+
+
+        // DataController.cs dosyanıza bu yeni metodu ekleyin
+
+        [HttpGet("aralik-detaylari")]
+        public IActionResult GetAralikDetaylari([FromQuery] DateTime baslangic, [FromQuery] DateTime bitis)
+        {
+            var result = new List<object>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+
+                // DÜZELTME: Sorgu, TerminalID'ye bakmadan, sadece en erken ve en geç saate bakacak şekilde basitleştirildi.
+                string query = @"
+            SELECT
+                S.UserID,
+                S.Ad,
+                S.Soyad,
+                B.Ad AS departman,
+                S.EMail,
+                S.CepTelefon,
+               
+                CONVERT(date, P.EventTime) AS Tarih,
+                MIN(P.EventTime) AS IlkGiris, -- Sadece en erken saat
+                MAX(P.EventTime) AS SonCikis  -- Sadece en geç saat
+            FROM Pool P
+            JOIN Sicil S ON CAST(P.UserID AS INT) = S.UserID
+            LEFT JOIN cbo_bolum B ON S.Bolum = B.ID
+            WHERE CONVERT(date, P.EventTime) BETWEEN @baslangic AND @bitis
+            GROUP BY S.UserID, S.Ad, S.Soyad, B.Ad,S.EMail,S.CepTelefon, CONVERT(date, P.EventTime)
+            -- HAVING şartı, gün içinde en az iki farklı hareket olmasını sağlar
+            HAVING MIN(P.EventTime) < MAX(P.EventTime)
+            ORDER BY Tarih, IlkGiris;
+        ";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Baslangic", baslangic.Date);
+                    cmd.Parameters.AddWithValue("@Bitis", bitis.Date);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            result.Add(new
+                            {
+                                UserID = reader["UserID"],
+                                Ad = reader["Ad"],
+                                Soyad = reader["Soyad"],
+                                Departman = reader["departman"],
+                                Tarih = reader["Tarih"],
+                                tel = reader["CepTelefon"],
+                                Email = reader["EMail"],
+
+                                IlkGiris = reader["IlkGiris"],
+                                SonCikis = reader["SonCikis"]
+                            });
+                        }
+                    }
+                }
+            }
+            return Ok(result);
         }
 
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

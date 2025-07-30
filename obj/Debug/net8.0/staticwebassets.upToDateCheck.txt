@@ -1,5 +1,6 @@
+wwwroot\assets\OTC-logo.jpg
 wwwroot\css\style.css
-wwwroot\js\rapor.js
+wwwroot\index.html
 wwwroot\js\script.js
 wwwroot\rapor.html
-wwwroot\index.html
+wwwroot\js\rapor.js

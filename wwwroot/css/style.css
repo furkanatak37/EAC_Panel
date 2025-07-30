@@ -1,21 +1,8 @@
-﻿body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: #f4f7f9;
-    color: #333;
-    margin: 0;
-    padding: 20px;
-}
+﻿
 
-.container {
-    max-width: 1400px;
-    margin: 0 auto;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    padding: 20px;
-}
 
 .page-header {
+    display: flex; /* Logo ve başlığı yan yana hizalar */
     text-align: center;
     color: #2c3e50;
     border-bottom: 2px solid #e0e0e0;
@@ -23,11 +10,19 @@
     margin-bottom: 20px;
 }
 
-/* İki Sütunlu Layout (Flexbox ile) */
-.dashboard-layout {
-    display: flex;
-    gap: 20px; /* Sütunlar arası boşluk */
-}
+    .page-header .logo {
+        height: 50px; /* Logonuzun yüksekliğini ayarlar, genişlik otomatik ayarlanır */
+        width: auto;
+    }
+
+    .page-header h1 {
+        margin: 0; /* Başlığın varsayılan boşluklarını sıfırlar */
+        font-size: 1.8rem; /* Başlık font boyutunu ayarlar */
+        flex-grow: 1; /* Başlığın kalan tüm boşluğu kaplamasını sağlar */
+        text-align: center; /* Başlığı tekrar ortalar */
+    }
+
+
 
 /* Sol Sütun: Kişi Listesi */
 .sidebar {
@@ -176,13 +171,7 @@ body {
     padding: 20px;
 }
 
-.page-header {
-    text-align: center;
-    color: #2c3e50;
-    border-bottom: 2px solid #e0e0e0;
-    padding-bottom: 15px;
-    margin-bottom: 20px;
-}
+
 
 .dashboard-layout {
     display: flex;
@@ -390,6 +379,7 @@ body {
     display: flex;
     flex-direction: column;
 }
+
 
     .kart h3 {
         margin-top: 0;
@@ -829,4 +819,129 @@ body {
 
     .rapor-butonu:hover {
         background-color: #0056b3;
+    }
+
+/* style.css dosyanızın sonuna ekleyin */
+
+/* Günün En'leri kartındaki her bir gün bloğu için stiller */
+.gunun-eni-item {
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #e9ecef; /* Her gün arasına ince bir çizgi */
+}
+
+    /* Son günün altındaki çizgiyi kaldır */
+    .gunun-eni-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+/* Günün tarihini vurgulamak için */
+.gunun-eni-tarih {
+    color: #007bff;
+    font-size: 1rem;
+    margin-bottom: 8px;
+}
+
+/* Her bir satır için daha kompakt bir görünüm */
+.gunun-eni-item p {
+    margin: 4px 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+
+.buton-grup {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Butonlar arası boşluk */
+}
+
+/* .rapor-butonu stilini daha önce eklemiştik, bu genel bir stil olacak */
+.rapor-butonu {
+    padding: 9px 15px;
+    background-color: #28a745; /* Yeşil renk */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+    .rapor-butonu:hover {
+        background-color: #218838;
+    }
+
+/* PDF butonu için farklı bir renk */
+#pdf-kaydet-btn {
+    background-color: #dc3545; /* Kırmızı renk */
+}
+
+    #pdf-kaydet-btn:hover {
+        background-color: #c82333;
+    }
+
+/* Departman raporu için başlık satırı stili */
+.detay-tablosu tr.departman-baslik-satiri td {
+    background-color: #e9ecef;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #495057;
+    text-align: center;
+}
+
+
+/* Mevcut .page-header ile ilgili tüm kuralları silip bunu yapıştırın */
+
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    /* === YENİ STİLLER === */
+    background-color: #D9232D; /* İstediğiniz kırmızı tonu */
+    color: white; /* İçindeki tüm yazıların rengini beyaz yapar */
+    padding: 15px 25px; /* Başlık çubuğuna iç boşluk verir */
+    margin: 0; /* Dış boşlukları sıfırlar */
+}
+
+    .page-header .logo {
+        height: 50px; /* Logonun yüksekliği */
+        width: auto;
+    }
+
+    .page-header h1 {
+        margin: 0;
+        font-size: 1.8rem;
+        flex-grow: 1;
+        text-align: center;
+        color: white; /* h1'in rengini de beyaz yapar */
+        font-weight: 600; /* Yazıyı biraz daha dolgun yapar */
+        letter-spacing: 1px; /* Harfler arasına hafif boşluk */
+    }
+
+
+/* İletişim ikonları için stil */
+.iletisim-ikonlari {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* İkonlar arası boşluk */
+}
+
+.icon-link {
+    display: inline-block;
+    color: #6c757d; /* İkon rengi */
+    transition: color 0.2s;
+}
+
+    .icon-link:hover {
+        color: #007bff; /* Hover durumunda ikon rengi */
+    }
+
+    .icon-link svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor; /* SVG'nin rengi, parent'ı olan <a> etiketinden gelir */
     }
