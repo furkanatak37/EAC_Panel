@@ -79,15 +79,6 @@ namespace WebApplication1.Controllers
 
 
 
-
-
-
-
-
-
-
-
-
         }
 
         [HttpGet("personel-mesai")]
@@ -224,11 +215,6 @@ HAVING
             return Ok(result);
         }
 
-        // DataController.cs dosyasındaki GetPersoneller metodunu aşağıdakiyle değiştirin.
-
-        // DataController.cs -> GetPersoneller metodu
-
-        // DataController.cs -> GetPersoneller metodu
 
         [HttpGet("personeller")]
         public IActionResult GetPersoneller()
@@ -263,7 +249,8 @@ FROM
 LEFT JOIN
     cbo_bolum B ON S.Bolum = B.ID
 LEFT JOIN
-    SinglePhoto SP ON S.UserID = SP.sicilid AND SP.rn = 1;
+    SinglePhoto SP ON S.ID = SP.sicilid AND SP.rn = 1;
+
 ";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())
@@ -396,6 +383,8 @@ LEFT JOIN
             SELECT
                 UserID, Ad, Soyad, departman,
                 SUM(CASE WHEN IlkGiris > DATEADD(minute, 30, DATEADD(hour, 8, CAST(Tarih AS datetime))) THEN 1 ELSE 0 END) AS GecKalmaSayisi,
+                SUM(CASE WHEN SonCikis < DATEADD(minute, 30, DATEADD(hour, 17, CAST(Tarih AS datetime))) THEN 1 ELSE 0 END) AS ErkenCikmaSayisi,
+
                 SUM(CASE WHEN SonCikis > DATEADD(minute, 30, DATEADD(hour, 17, CAST(Tarih AS datetime))) THEN DATEDIFF(MINUTE, DATEADD(minute, 30, DATEADD(hour, 17, CAST(Tarih AS datetime))), SonCikis) ELSE 0 END) AS ToplamFazlaMesaiDakika
             FROM #GunlukMesai
             GROUP BY UserID, Ad, Soyad, departman;
@@ -445,6 +434,8 @@ LEFT JOIN
                                 Soyad = reader["Soyad"],
                                 Departman = reader["departman"],
                                 GecKalmaSayisi = reader["GecKalmaSayisi"],
+                                ErkenCikmaSayisi = reader["ErkenCikmaSayisi"],
+
                                 ToplamFazlaMesaiDakika = reader["ToplamFazlaMesaiDakika"]
                             });
                         }

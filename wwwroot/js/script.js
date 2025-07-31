@@ -14,6 +14,8 @@ const departmanFiltreSelect = document.getElementById('departmanFiltre');
 const raporTarihInput = document.getElementById('raporTarih');
 const gununEnleriIcerik = document.getElementById('gunun-enleri-icerik');
 const gecGelenlerListesi = document.getElementById('gec-gelenler-listesi');
+const erkenCikanlarListesi = document.getElementById('erken-cikanlar-listesi');
+
 const departmanAnalizIcerik = document.getElementById('departman-analiz-icerik');
 const fazlaMesaiListesi = document.getElementById('fazla-mesai-listesi');
 // Kişi detayları için elementler
@@ -21,6 +23,8 @@ const baslangicTarihInput = document.getElementById('baslangicTarih');
 const bitisTarihInput = document.getElementById('bitisTarih');
 const raporOlusturBtn = document.getElementById('raporOlusturBtn');
 const departmanDetayBtn = document.getElementById('departman-detay-btn');
+const erkenCikanlarDetayBtn = document.getElementById('erken-cikanlar-detay-btn');
+
 
 // Olay dinleyicilerini güncelleyin (raporTarihInput'u kaldırıp raporOlusturBtn'yi ekleyin)
 raporOlusturBtn.addEventListener('click', guncelleAralikRaporlari);
@@ -69,12 +73,16 @@ function populateGunSecici(tarihler) {
         option.value = index; // Değer olarak dizideki sırasını (index) veriyoruz
         option.textContent = tarih;
         gunSeciciSelect.appendChild(option);
+
     });
 }
 
 /**
  * Dropdown'dan bir gün seçildiğinde tetiklenir.
  */
+
+
+
 function handleGunSeciciChange() {
     const selectedIndex = parseInt(gunSeciciSelect.value);
 
@@ -198,6 +206,8 @@ function initializePage() {
 function setInitialReportState() {
     const initialMessage = 'Raporu görüntülemek için lütfen bir tarih seçin.';
     gecGelenlerListesi.innerHTML = `<li>${initialMessage}</li>`;
+    erkenCikanlarListesi.innerHTML = `<li>${initialMessage}</li>`;
+
     gununEnleriIcerik.innerHTML = `<p>${initialMessage}</p>`;
     departmanAnalizIcerik.innerHTML = `<p>${initialMessage}</p>`;
 }
@@ -240,8 +250,12 @@ async function guncelleAralikRaporlari() {
     gecGelenlerDetayBtn.href = `rapor.html?rapor=gec&baslangic=${baslangic}&bitis=${bitis}`;
     fazlaMesaiDetayBtn.href = `rapor.html?rapor=mesai&baslangic=${baslangic}&bitis=${bitis}`;
     departmanDetayBtn.href = `rapor.html?rapor=departman&baslangic=${baslangic}&bitis=${bitis}`;
+    erkenCikanlarDetayBtn.href = `rapor.html?rapor=erken&baslangic=${baslangic}&bitis=${bitis}`;
+
 
     gecGelenlerListesi.innerHTML = '<li>Yükleniyor...</li>';
+    erkenCikanlarListesi.innerHTML = '<li>Yükleniyor...</li>';
+
     fazlaMesaiListesi.innerHTML = '<li>Yükleniyor...</li>';
     gununEnleriIcerik.innerHTML = '<p>Yükleniyor...</p>';
     departmanAnalizIcerik.innerHTML = '<p>Yükleniyor...</p>';
@@ -253,6 +267,8 @@ async function guncelleAralikRaporlari() {
 
         // Gelen verinin yeni yapısına göre ilgili render fonksiyonlarını çağır
         renderGecKalanlarAralik(data.personelOzetleri || []);
+        renderErkenCikanlarAralik(data.personelOzetleri || []);
+
         renderFazlaMesaiAralik(data.personelOzetleri || []);
         renderAraliginEnleri(data.araliginEnleri);
         renderDepartmanAnaliziAralik(data.departmanOzetleri || []);
@@ -261,6 +277,8 @@ async function guncelleAralikRaporlari() {
         console.error("Aralık raporu alınırken hata:", error);
         const errorMessage = '<li>Rapor alınamadı.</li>';
         gecGelenlerListesi.innerHTML = errorMessage;
+        erkenCikanlarListesi.innerHTML = errorMessage;
+
         fazlaMesaiListesi.innerHTML = errorMessage;
         gununEnleriIcerik.innerHTML = '<p>Hata!</p>';
         departmanAnalizIcerik.innerHTML = '<p>Hata!</p>';
@@ -279,6 +297,33 @@ function renderGecKalanlarAralik(personelOzetleri) {
         const li = document.createElement('li');
         li.textContent = `${p.Ad || p.ad} ${p.Soyad || p.soyad} (${p.gecKalmaSayisi || p.GecKalmaSayisi} kez)`;
         gecGelenlerListesi.appendChild(li);
+    });
+}
+
+/**
+ * Gelen özet verisine göre "Erken Çıkanlar" kartını doldurur.
+ */
+function renderErkenCikanlarAralik(personelOzetleri) {
+    // Backend'den 'ErkenCikmaSayisi' adında bir veri bekliyoruz.
+    // Eğer bu veri yoksa, fonksiyon çalışmaz. Lütfen C# kodunuzu kontrol edin.
+    const erkenCikanlar = personelOzetleri.filter(p => (p.erkenCikmaSayisi || p.ErkenCikmaSayisi) > 0);
+
+    erkenCikanlarListesi.innerHTML = ''; // Listeyi temizle
+
+    if (erkenCikanlar.length === 0) {
+        erkenCikanlarListesi.innerHTML = '<li>Bu aralıkta erken çıkan personel bulunamadı.</li>';
+        return;
+    }
+
+    // En çok erken çıkandan en aza doğru sırala
+    erkenCikanlar.sort((a, b) => (b.erkenCikmaSayisi || b.ErkenCikmaSayisi) - (a.erkenCikmaSayisi || a.ErkenCikmaSayisi));
+
+    erkenCikanlar.forEach(p => {
+        const li = document.createElement('li');
+        const erkenCikmaSayisi = p.erkenCikmaSayisi || p.ErkenCikmaSayisi;
+        const adSoyad = `${p.Ad || p.ad} ${p.Soyad || p.soyad}`;
+        li.textContent = `${adSoyad} (${erkenCikmaSayisi} kez)`;
+        erkenCikanlarListesi.appendChild(li);
     });
 }
 
@@ -303,14 +348,7 @@ function renderFazlaMesaiAralik(personelOzetleri) {
     });
 }
 
-/**
- * "Aralığın En'leri" kartını doldurur.
- */
-// script.js dosyanızdaki renderAraliginEnleri fonksiyonunu bununla değiştirin
 
-/**
- * "Aralığın En'leri" kartını her gün için ayrı ayrı doldurur.
- */
 function renderAraliginEnleri(enlerData) {
     gununEnleriIcerik.innerHTML = ''; // Önceki içeriği temizle
 
@@ -489,6 +527,8 @@ function renderDepartmanAnalizi(personelData) {
     }
 }
 
+
+
 function displayDailyDetails(secilenGun) {
     const tarih = new Date(secilenGun.Tarih || secilenGun.tarih);
     const ilkGiris = new Date(secilenGun.IlkGiris || secilenGun.ilkGiris);
@@ -496,6 +536,7 @@ function displayDailyDetails(secilenGun) {
     const gecGirisSiniri = new Date(tarih).setHours(8, 30, 0);
     const erkenCikisSiniri = new Date(tarih).setHours(17, 10, 0);
     let durumMesaji = '';
+
     if (ilkGiris > gecGirisSiniri) durumMesaji += 'Geç geldi. ';
     if (sonCikis < erkenCikisSiniri) durumMesaji += 'Erken çıktı.';
     if (durumMesaji === '') durumMesaji = 'Mesai saatlerine uyulmuş.';
@@ -506,6 +547,7 @@ function displayDailyDetails(secilenGun) {
         <strong>Durum:</strong> <span style="color: ${durumMesaji.includes('uyulmuş') ? 'green' : 'red'};">${durumMesaji}</span>
     `;
     gunlukDetayKutusu.innerHTML = detayHTML;
+    gunlukDetayKutusu.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 
@@ -581,6 +623,8 @@ const anaGrafikAlani = document.getElementById('anaGrafikAlani');
 
 // kisiSecildi fonksiyonunu aşağıdakiyle güncelleyin
 
+// script.js dosyanızdaki bu fonksiyonu güncelleyin
+
 function kisiSecildi(userId, adSoyad, clickedListItem) {
     // 1. Arayüzü güncelle
     document.querySelectorAll('#personelListesi li').forEach(item => item.classList.remove('selected'));
@@ -596,13 +640,16 @@ function kisiSecildi(userId, adSoyad, clickedListItem) {
     // GÖRÜNÜRLÜK AYARLARI
     kisiDetayBaslik.style.display = 'block';
     gunlukDetayKutusu.style.display = 'block';
-    personelInfoKarti.style.display = 'flex'; // Info kartını görünür yap
-    anaGrafikAlani.style.display = 'flex'; // Grafik sarmalayıcısını görünür yap
+    personelInfoKarti.style.display = 'flex';
+    anaGrafikAlani.style.display = 'flex';
 
     // 4. Önceki grafikleri temizle
     if (mesaiChart) mesaiChart.destroy();
     if (durumChart) durumChart.destroy();
     gunSeciciSelect.innerHTML = '<option value="">Yükleniyor...</option>';
+
+    // === YENİ EKLENEN SATIR: EKRANI AŞAĞI KAYDIRMA ===
+    // Grafik başlığına doğru yumuşak bir şekilde kaydır.
 
     // 5. Yeni grafik verilerini çek ve oluştur
     fetch(`/api/data/mesai/${userId}`)
@@ -610,14 +657,13 @@ function kisiSecildi(userId, adSoyad, clickedListItem) {
         .then(apiData => {
             currentPersonApiData = apiData;
             if (apiData.length === 0) {
+
                 gunlukDetayKutusu.innerHTML = 'Bu kişiye ait görüntülenecek mesai verisi bulunamadı.';
-                // Veri yoksa info kartını ve grafikleri tekrar gizle
-                personelInfoKarti.style.display = 'none';
-                anaGrafikAlani.style.display = 'none';
+                personelInfoKarti.style.display = 'Bu kişiye ait görüntülenecek mesai verisi bulunamadı.';
+                anaGrafikAlani.style.display = 'Bu kişiye ait görüntülenecek mesai verisi bulunamadı.';
                 return;
             }
 
-            // Veri varsa grafik container'larını spesifik olarak göster
             barChartContainer.style.display = 'block';
             donutChartContainer.style.display = 'block';
 
@@ -630,6 +676,9 @@ function kisiSecildi(userId, adSoyad, clickedListItem) {
             console.error('Mesai detayı alınırken hata:', error);
             gunlukDetayKutusu.innerHTML = 'Mesai verileri yüklenirken bir hata oluştu.';
         });
+
+    kisiDetayBaslik.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
 }
 
 /**
@@ -730,4 +779,7 @@ function createDoughnutChart(donutData) {
             }
         }
     });
+
+
+
 }

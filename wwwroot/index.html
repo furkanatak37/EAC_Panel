@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDKS Mesai Takip Paneli</title>
-
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/2.2.1/chartjs-plugin-annotation.min.js"></script>
@@ -12,111 +11,110 @@
 </head>
 <body>
 
-    <div class="container">
-   
-            <header class="page-header">
-                <img src="assets/OTC-logo.jpg" alt="Şirket Logosu" class="logo">
-                <h1>PDKS Mesai Takip Paneli</h1>
-            </header>
-            
-        
+    <header class="page-header">
+        <img src="assets/tp-otc.png" alt="Şirket Logosu" class="logo">
+        <h1>PDKS Mesai Takip Paneli</h1>
+    </header>
 
-            <div class="dashboard-layout">
-
-                <div class="sidebar">
-                    <h2>Kişi Listesi</h2>
-                    <div class="filter-controls">
-                        <input type="text" id="adFiltre" placeholder="Ada göre filtrele...">
-                        <select id="departmanFiltre">
-                            <option value="">Tüm Departmanlar</option>
-                        </select>
-                    </div>
-                    <ul id="personelListesi">
-                    </ul>
+    <main class="container">
+        <div class="dashboard-layout">
+            <div class="sidebar">
+                <h2>Kişi Listesi</h2>
+                <div class="filter-controls">
+                    <input type="text" id="adFiltre" placeholder="Ada göre filtrele...">
+                    <select id="departmanFiltre">
+                        <option value="">Tüm Departmanlar</option>
+                    </select>
                 </div>
+                <ul id="personelListesi"></ul>
+                <div class="kart" id="personel-info-karti">
+                    <h3><span class="kart-ikon">ℹ️</span>Personel Bilgileri</h3>
+                    <div id="personel-info-icerik"></div>
+                </div>
+            </div>
 
-                <div class="reports-section">
-                    <div class="rapor-header">
-                        <h2 id="detayBaslik">Tarih Aralığı Raporları</h2>
-                        <div class="tarih-araligi-secici">
-                            <label for="baslangicTarih">Başlangıç:</label>
-                            <input type="date" id="baslangicTarih">
-                            <label for="bitisTarih">Bitiş:</label>
-                            <input type="date" id="bitisTarih">
-                            <button id="raporOlusturBtn" class="rapor-butonu">Raporla</button>
-                        </div>
-                    </div>
-                    <div class="rapor-kartlari">
-                        <div class="kart">
-                            <h3>Günün En'leri</h3>
-                            <div id="gunun-enleri-icerik"></div>
-                        </div>
-                        <div class="kart">
-                            <h3 class="kart-baslik">
-                                <span>Geç Gelenler (08:30 Sonrası)</span>
-                                <a href="#" id="gec-gelenler-detay-btn" class="kart-buton" target="_blank">Listele</a>
-                            </h3>
-                            <ul id="gec-gelenler-listesi"></ul>
-                        </div>
-
-
-                        <div class="kart">
-                            <h3 class="kart-baslik">
-                                <span>Fazla Mesai Yapanlar (17:30 Sonrası)</span>
-                                <a href="#" id="fazla-mesai-detay-btn" class="kart-buton" target="_blank">Listele</a>
-                            </h3>
-                            <ul id="fazla-mesai-listesi"></ul>
-                        </div>
-
-
-                        <div class="kart">
-                            <h3 class="kart-baslik">
-                                <span>Departman Analizi</span>
-                                <a href="#" id="departman-detay-btn" class="kart-buton" target="_blank">Listele</a>
-                            </h3>
-                            <div id="departman-analiz-icerik"></div>
-                        </div>
-
-
-
-                        
+            <div class="reports-section">
+                <div class="rapor-header">
+                    <h2 id="detayBaslik">Tarih Aralığı Raporları</h2>
+                    <div class="tarih-araligi-secici">
+                        <label for="baslangicTarih">Başlangıç:</label>
+                        <input type="date" id="baslangicTarih">
+                        <label for="bitisTarih">Bitiş:</label>
+                        <input type="date" id="bitisTarih">
+                        <button id="raporOlusturBtn" class="rapor-butonu">Raporla</button>
                     </div>
                 </div>
+                <div class="rapor-kartlari">
 
-                <div class="charts-section">
-                    <hr class="rapor-ayrac">
-                    <h2 id="kisiDetayBaslik" style="display:none;">Kişi Mesai Detayları</h2>
+                    <div class="kart gec-gelenler">
+                        <h3 class="kart-baslik">
+                            <span><span class="kart-ikon">⏰</span>Geç Gelenler (08:45 Sonrası)</span>
+                            <a href="#" id="gec-gelenler-detay-btn" class="kart-buton" target="_blank">Listele</a>
+                        </h3>
+                        <ul id="gec-gelenler-listesi"></ul>
+                    </div>
+                    <div class="kart erken-cikanlar">
+                        <h3 class="kart-baslik">
+                            <span><span class="kart-ikon">🏃</span>Erken Çıkanlar (17:30 Öncesi)</span>
+                            <a href="#" id="erken-cikanlar-detay-btn" class="kart-buton" target="_blank">Listele</a>
+                        </h3>
+                        <ul id="erken-cikanlar-listesi"></ul>
+                    </div>
+                    <div class="kart fazla-mesai">
+                        <h3 class="kart-baslik">
+                            <span><span class="kart-ikon">➕</span>Fazla Mesai Yapanlar</span>
+                            <a href="#" id="fazla-mesai-detay-btn" class="kart-buton" target="_blank">Listele</a>
+                        </h3>
+                        <ul id="fazla-mesai-listesi"></ul>
+                    </div>
+                    <div class="kart departman-analizi">
+                        <h3 class="kart-baslik">
+                            <span><span class="kart-ikon">🏢</span>Departman Analizi</span>
 
-                    <div class="details-wrapper">
+                            <a href="#" id="departman-detay-btn" class="kart-buton" target="_blank">Listele</a>
+                        </h3>
+                        <div id="departman-analiz-icerik"></div>
+                    </div>
 
-                        <div class="kart" id="personel-info-karti" style="display:none;">
-                            <h3>Personel İnfo</h3>
-                            <div id="personel-info-icerik"></div>
-                        </div>
+                    <div class="kart gunun-enleri">
+                        <h3><span class="kart-ikon">🏆</span>Günün En'leri</h3>
 
-                        <div class="charts-wrapper" id="anaGrafikAlani" style="display:none;">
-                            <div class="chart-container" id="barChartContainer">
-                                <div class="chart-controls">
-                                    <label for="gunSecici">Grafikten bir gün seçin:</label>
-                                    <select id="gunSecici"></select>
-                                </div>
-                                <canvas id="mesaiChart"></canvas>
+                        <div id="gunun-enleri-icerik"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-section">
+                <hr class="rapor-ayrac">
+                <h2 id="kisiDetayBaslik" style="display:none;">Kişi Mesai Detayları</h2>
+
+                <div class="details-wrapper">
+                    <div class="kart" id="personel-info-karti-detay" style="display:none;">
+                        <h3><span class="kart-ikon">ℹ️</span>Personel Bilgileri</h3>
+                        <div id="personel-info-icerik-detay"></div>
+                    </div>
+
+                    <div class="charts-wrapper" id="anaGrafikAlani" style="display:none;">
+                        <div class="chart-container" id="barChartContainer">
+
+                            <label for="gunSecici">Grafikten bir gün seçin:</label>
+                            <select id="gunSecici"></select>
+                            <canvas id="mesaiChart"></canvas>
+
+                            <div class="chart-controls">
+
                             </div>
-                            <div class="chart-container" id="donutChartContainer">
-                                <canvas id="durumChart"></canvas>
-                            </div>
+
+                            <div id="gunlukDetay" class="gunluk-detay-kutusu" style="display:none;"></div>
                         </div>
-
-                    </div>
-
-                    <div id="gunlukDetay" class="gunluk-detay-kutusu" style="display:none;">
-                        Detayları görmek için grafikte bir güne tıklayın.
+                        <div class="chart-container" id="donutChartContainer">
+                            <canvas id="durumChart"></canvas>
+                        </div>
                     </div>
                 </div>
-
             </div>
         </div>
-        <script src="js/script.js" defer></script>
-
+    </main>
+    <script src="js/script.js" defer></script>
 </body>
 </html>

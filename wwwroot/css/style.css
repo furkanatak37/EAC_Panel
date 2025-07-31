@@ -1,599 +1,102 @@
-﻿
-
-
-.page-header {
-    display: flex; /* Logo ve başlığı yan yana hizalar */
-    text-align: center;
-    color: #2c3e50;
-    border-bottom: 2px solid #e0e0e0;
-    padding-bottom: 15px;
-    margin-bottom: 20px;
+﻿/* ==========================================================================
+   1. TEMEL STİLLER VE DEĞİŞKENLER
+   ========================================================================== */
+:root {
+    --primary-color: #0d6efd;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+    --success-color: #198754;
+    --dark-color: #212529;
+    --light-gray-color: #f8f9fa;
+    --border-color: #dee2e6;
+    --body-bg-color: #f0f2f5;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--body-bg-color);
+    color: var(--dark-color);
+    margin: 0;
+    padding-top: 70px; /* Sabit header için boşluk */
+}
+
+/* ==========================================================================
+   2. ANA YERLEŞİM (LAYOUT)
+   ========================================================================== */
+
+/* style.css dosyanızdaki mevcut .page-header kuralını bununla değiştirin */
+
+/* style.css dosyanızdaki mevcut .page-header kuralını bununla değiştirin */
+
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    color: white; /* Yazı ve ikonların rengi */
+    padding: 10px 25px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: 80px;
+    /* === ARKA PLAN SEÇENEKLERİ (Birini seçip diğerlerini silin) === */
+    /* Seçenek 1: Canlı ve Modern Kırmızı Geçişi */
+    background: linear-gradient(90deg, #ffffff, white);
+    /* Seçenek 2: Koyu ve Klasik Kırmızı Geçişi */
+    /* background: linear-gradient(90deg, #D32F2F, #B71C1C); */
+    /* Seçenek 3: Daha Yumuşak ve Açık Tonlu Geçiş */
+    /* background: linear-gradient(90deg, #EF5350, #E53935); */
+}
+
+    /* Logo ve Başlık stilleriniz aynı kalabilir */
     .page-header .logo {
-        height: 50px; /* Logonuzun yüksekliğini ayarlar, genişlik otomatik ayarlanır */
+        height: 55px;
         width: auto;
+        padding-left:30px;
     }
 
     .page-header h1 {
-        margin: 0; /* Başlığın varsayılan boşluklarını sıfırlar */
-        font-size: 1.8rem; /* Başlık font boyutunu ayarlar */
-        flex-grow: 1; /* Başlığın kalan tüm boşluğu kaplamasını sağlar */
-        text-align: center; /* Başlığı tekrar ortalar */
-    }
-
-
-
-/* Sol Sütun: Kişi Listesi */
-.sidebar {
-    flex: 0 0 300px; /* Genişliği 300px, esnemesin, küçülmesin */
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-    max-height: 75vh; /* Yüksekliği ekranın %75'i ile sınırla */
-    overflow-y: auto;
-}
-
-    .sidebar h2 {
-        margin-top: 0;
-        color: #495057;
-        font-size: 1.2rem;
-    }
-
-#personelListesi {
-    list-style-type: none; /* Madde işaretlerini kaldır */
-    padding: 0;
-    margin: 0;
-}
-
-    #personelListesi li {
-        padding: 12px 15px;
-        margin-bottom: 5px;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background-color 0.2s, color 0.2s;
-        border: 1px solid transparent;
-    }
-
-        #personelListesi li:hover {
-            background-color: #e9ecef;
-        }
-
-        /* Seçili olan kişiyi vurgulamak için stil */
-        #personelListesi li.selected {
-            background-color: #007bff;
-            color: white;
-            font-weight: bold;
-            border-color: #0056b3;
-        }
-
-/* Sağ Sütun: Grafik ve Detaylar */
-.main-content {
-    flex: 1; /* Geriye kalan tüm alanı kapla */
-    padding: 20px;
-    background-color: #ffffff;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-}
-
-#detayBaslik {
-    margin-top: 0;
-    color: #343a40;
-}
-
-.chart-container {
-    position: relative;
-    width: 100%;
-    height: auto;
-}
-
-/* Mobil Cihazlar için Ekran Küçüldüğünde Sütunları Alt Alta Getir */
-@media (max-width: 992px) {
-    .dashboard-layout {
-        flex-direction: column;
-    }
-
-    .sidebar {
-        flex: 1; /* Genişlik otomatik ayarla */
-        max-height: 300px; /* Mobil için yükseklik */
-    }
-}
-
-
-/* Mevcut stillerinizin altına ekleyin */
-
-.charts-wrapper {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-    margin-bottom: 20px;
-}
-
-    .charts-wrapper .chart-container {
-        flex: 1; /* Grafikler alanı eşit paylaşsın */
-        min-width: 0;
-        height: 450px; /* GRAFİK YÜKSEKLİĞİ: Bu değeri artırıp azaltabilirsiniz */
-        /* Flexbox'ın doğru küçülmesini sağlar */
-    }
-
-.gunluk-detay-kutusu {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    min-height: 50px;
-    transition: background-color 0.3s;
-    font-size: 0.95rem;
-    color: #495057;
-}
-
-/* Mobil için grafiklerin alt alta gelmesi */
-@media (max-width: 1200px) {
-    .charts-wrapper {
-        flex-direction: column;
-    }
-}
-/* Filtreleme Stilleri */
-.filter-controls {
-    margin-bottom: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-    .filter-controls input[type="text"],
-    .filter-controls select {
-        width: 100%;
-        padding: 8px 10px;
-        border: 1px solid #ced4da;
-        border-radius: 5px;
-        font-size: 0.9rem;
-    }
-
-
-/* Genel Sayfa Stilleri */
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: #f4f7f9;
-    color: #333;
-    margin: 0;
-    padding: 20px;
-}
-
-.container {
-    max-width: 1400px;
-    margin: 0 auto;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    padding: 20px;
-}
-
-
-
-.dashboard-layout {
-    display: flex;
-    gap: 20px;
-}
-
-/* === DEĞİŞİKLİK 1: FİLTRELERİ SABİT TUTMA === */
-
-/* Sol Sütun: Kişi Listesi */
-.sidebar {
-    flex: 0 0 300px;
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-    max-height: 75vh;
-    /* YENİ: Dikey flex container yapısı */
-    display: flex;
-    flex-direction: column;
-}
-
-    .sidebar h2 {
-        margin-top: 0;
-        color: #495057;
-        font-size: 1.2rem;
-        /* YENİ: Başlığın esnemesini engelle */
-        flex-shrink: 0;
-    }
-
-#personelListesi {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    /* YENİ: Esneyen ve kendi içinde kayan liste */
-    flex-grow: 1;
-    overflow-y: auto;
-    padding-right: 5px; /* Kaydırma çubuğu için küçük bir boşluk */
-}
-
-    /* Kişi listesi elemanları stilleri (değişiklik yok) */
-    #personelListesi li {
-        padding: 12px 15px;
-        margin-bottom: 5px;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background-color 0.2s, color 0.2s;
-        border: 1px solid transparent;
-    }
-
-        #personelListesi li:hover {
-            background-color: #e9ecef;
-        }
-
-        #personelListesi li.selected {
-            background-color: #007bff;
-            color: white;
-            font-weight: bold;
-            border-color: #0056b3;
-        }
-
-
-/* === DEĞİŞİKLİK 2: FİLTRE ÖĞELERİNE GELİŞMİŞ STİL === */
-
-.filter-controls {
-    margin-bottom: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    /* YENİ: Filtrelerin esnemesini engelle */
-    flex-shrink: 0;
-    background-color: #f8f9fa;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #dee2e6;
-}
-
-    .filter-controls input[type="text"],
-    .filter-controls select {
-        width: 100%;
-        padding: 10px 15px; /* Daha geniş iç boşluk */
-        border: 1px solid #ddd;
-        border-radius: 8px; /* Daha yuvarlak kenarlar */
-        font-size: 1rem;
-        background-color: #fff;
-        transition: border-color 0.3s, box-shadow 0.3s; /* Yumuşak geçiş efekti */
-        -webkit-appearance: none; /* iOS'taki varsayılan stilleri kaldır */
-        -moz-appearance: none;
-        appearance: none;
-    }
-
-        /* Filtreye tıklandığında (focus) görünecek stil */
-        .filter-controls input[type="text"]:focus,
-        .filter-controls select:focus {
-            outline: none; /* Varsayılan focus çerçevesini kaldır */
-            border-color: #80bdff; /* Mavi kenarlık */
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Mavi parlama efekti */
-        }
-
-/* İsim filtresi için arama ikonu */
-#adFiltre {
-    padding-right: 40px; /* İkon için yer aç */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' class='bi bi-search' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-    width :240px;
-}
-
-/* Departman filtresi için aşağı ok ikonu */
-#departmanFiltre {
-    padding-right: 40px; /* İkon için yer aç */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' class='bi bi-chevron-down' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-}
-
-/* === Sağ Sütun Stilleri (Değişiklik Yok) === */
-.main-content {
-    flex: 1;
-    padding: 20px;
-    background-color: #ffffff;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-}
-
-#detayBaslik {
-    margin-top: 0;
-    color: #343a40;
-}
-
-.charts-wrapper {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-    margin-bottom: 20px;
-}
-
-    .charts-wrapper .chart-container {
-        flex: 1;
-        min-width: 0;
-        height: 450px;
-    }
-
-.gunluk-detay-kutusu {
-    margin-top: 50px;
-    padding: 15px;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    min-height: 50px;
-    transition: background-color 0.3s;
-    font-size: 0.95rem;
-    color: #495057;
-}
-
-/* === Medya Sorguları (Değişiklik Yok) === */
-@media (max-width: 1200px) {
-    .charts-wrapper {
-        flex-direction: column;
-    }
-}
-
-@media (max-width: 992px) {
-    .dashboard-layout {
-        flex-direction: column;
-    }
-
-    .sidebar {
-        flex: 1;
-        max-height: 300px;
-    }
-}
-
-
-/* style.css dosyasının sonuna ekleyin */
-
-.rapor-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-    .rapor-header h2 {
         margin: 0;
-    }
-
-    .rapor-header input[type="date"] {
-        padding: 8px;
-        border: 1px solid #dee2e6;
-        border-radius: 5px;
-        font-size: 1rem;
-    }
-
-.rapor-kartlari {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-.kart {
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 20px;
-    height: 300px;
-    display: flex;
-    flex-direction: column;
-}
-
-
-    .kart h3 {
-        margin-top: 0;
-        border-bottom: 1px solid #d1d9e2;
-        padding-bottom: 10px;
-        margin-bottom: 15px;
-    }
-
-    .kart ul {
-        list-style-type: none;
-        padding-left: 0;
-        margin: 0;
-        overflow-y: auto;
+        font-size: 1.8rem;
         flex-grow: 1;
+        text-align: center;
+        color: black;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
     }
-
-        .kart ul li, .kart p {
-            padding: 5px 0;
-            font-size: 0.95rem;
-        }
-
-.rapor-ayrac {
-    border: none;
-    border-top: 1px solid #e0e0e0;
-    margin: 30px 0;
-}
-
-
-/* .kart h3 { ... } kuralının altına ekleyebilirsiniz */
-
-/* Kartların içindeki asıl içerik alanlarını (div veya ul) hedefler */
-.kart > div,
-.kart > ul {
-    flex-grow: 1; /* Alanın, kartın geri kalan boşluğunu doldurmasını sağlar */
-    overflow-y: auto; /* İçerik sığmazsa dikey kaydırma çubuğu gösterir */
-    /* Kaydırma çubuğunun metnin üzerine gelmemesi için sağa küçük bir boşluk */
-    padding-right: 10px;
-}
-
-.charts-wrapper {
-    display: flex;
-    flex-wrap: wrap; /* Taşma olursa alt satıra geç */
-    gap: 20px; /* Grafikler arasında boşluk */
-}
-
-    .charts-wrapper .chart-container {
-        flex: 1 1 300px; /* Minimum 300px genişlik, eşit oranda büyüyebilir/küçülebilir */
-        min-width: 0; /* İçeriğin taşmasını engellemek için */
-    }
-/* Eğer .chart-container'a özel genişlik verdiyseniz onu kaldırın veya yorum satırı yapın */
-/* .charts-wrapper .chart-container { width: 50%; } (Örneğin varsa silin) */
-}
-
-/* style.css */
-/* style.css */
-.rapor-kartlari {
-    display: grid;
-    /* minmax(280px, 1fr) kartların minimum 280px olmasını sağlar, sığmazsa alt satıra atar */
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-}
-
-/* style.css dosyanıza bu yeni kuralları ekleyin veya mevcutları güncelleyin. */
-
-/* Liste elemanını, resmi ve ismi yan yana hizalamak için flexbox yapıyoruz */
-#personelListesi li {
-    padding: 8px 15px; /* Dikey padding'i biraz azalttık */
-    margin-bottom: 5px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s;
-    border: 1px solid transparent;
-    /* YENİ EKLENEN stiller */
-    display: flex;
-    align-items: center;
-    gap: 12px; /* Resimle isim arasındaki boşluk */
-}
-
-/* Personel fotoğrafı için stiller */
-.personel-foto {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%; /* Resimleri yuvarlak yapar */
-    object-fit: cover; /* Resmin en-boy oranını koruyarak kutuya sığmasını sağlar */
-    border: 2px solid #dee2e6; /* İnce bir çerçeve */
-    flex-shrink: 0; /* Küçülmesini engeller */
-}
-
-#personelListesi li.selected .personel-foto {
-    border-color: #fff; /* Seçili olduğunda çerçevenin rengini değiştirir */
-}
-
-#personelListesi li:hover {
-    background-color: #e9ecef;
-}
-
-#personelListesi li.selected {
-    background-color: #007bff;
-    color: white;
-    font-weight: bold;
-    border-color: #0056b3;
-}
-
-
-/* Grafik üstü kontrol stilleri */
-.chart-controls {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-    padding-right: 10px;
-}
-
-    .chart-controls label {
-        font-size: 0.9rem;
-        color: #6c757d;
-    }
-
-    .chart-controls select {
-        padding: 5px 8px;
-        border: 1px solid #ced4da;
-        border-radius: 5px;
-        background-color: #f8f9fa;
-        cursor: pointer;
-    }
-
-
-/* style.css dosyanızdaki mevcut kuralları bunlarla güncelleyin/değiştirin */
-
-/* Ana sidebar yapısı */
-.sidebar {
-    flex: 0 0 300px;
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-    max-height: 85vh; /* Yüksekliği biraz artırabiliriz */
-    display: flex;
-    flex-direction: column;
-}
-
-/* Personel listesinin kaydırılabilir olması için */
-#personelListesi {
-    list-style-type: none;
+.container {
+    width: 100%;
     padding: 0;
-    margin: 0;
-    flex-grow: 1; /* Mevcut tüm boşluğu doldurarak info kartını aşağı iter */
-    overflow-y: auto; /* Sadece bu liste kaydırılabilir olur */
-    padding-right: 5px;
 }
-
-/* YENİ: Personel Info Kartı için özel stiller */
-#personel-info-karti {
-    flex-shrink: 0; /* Kartın küçülmesini engeller */
-    margin-top: 15px; /* Üstündeki listeden boşluk bırakır */
-    height: auto; /* Yüksekliği içeriğine göre ayarlar */
-    min-height: 120px; /* Minimum bir yükseklik verir */
-}
-
-    /* Mevcut .kart stiliniz diğer rapor kartlarını etkilemeye devam edebilir,
-   bu yüzden ID ile daha spesifik bir kural yazmak iyidir. */
-    #personel-info-karti h3 {
-        margin-top: 0;
-    }
-
-
-.sidebar {
-    flex: 0 0 300px;
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-    max-height: 85vh;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Personel listesinin kaydırılabilir olması için */
-#personelListesi {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    flex-grow: 1; /* Mevcut tüm boşluğu doldurarak info kartını aşağı iter */
-    overflow-y: auto; /* Sadece bu liste kaydırılabilir olur */
-    padding-right: 5px;
-}
-
-/* Personel Info Kartı için özel stiller */
-#personel-info-karti {
-
-    flex-shrink: 0; /* Kartın küçülmesini engeller */
-    margin-top: 55px; /* Üstündeki listeden boşluk bırakır */
-    height: auto;
-    min-height: 120px;
-}
-
 
 .dashboard-layout {
     display: grid;
-    /* 2 sütun tanımla: ilki 320px, ikincisi kalan tüm alan */
-    grid-template-columns: 320px 1fr;
-    /* 2 satır tanımla: ilki içeriğe göre, ikincisi kalan tüm alan */
+    grid-template-columns: 350px 1fr;
     grid-template-rows: auto 1fr;
-    /* Hangi bölümün nereye gideceğini tanımla */
     grid-template-areas:
         "sidebar reports"
-        "charts  charts";
-    gap: 20px;
+        "sidebar charts";
+    gap: 25px;
+    padding: 25px;
+    height: calc(100vh - 70px);
 }
 
-/* YENİ: Grid alanlarını atayan kurallar */
 .sidebar {
     grid-area: sidebar;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
 }
 
 .reports-section {
@@ -602,146 +105,348 @@ body {
 
 .charts-section {
     grid-area: charts;
-    /* Grafiklerin alt bölümde tam genişlik kaplamasını sağlar */
-    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
+/* ==========================================================================
+   3. BİLEŞENLER
+   ========================================================================== */
 
-/* Mobil Cihazlar için medya sorgusunu aşağıdakiyle güncelleyin */
-@media (max-width: 992px) {
-    .dashboard-layout {
-        /* Tek sütuna düşür */
-        grid-template-columns: 1fr;
-        /* 3 satır tanımla */
-        grid-template-rows: auto auto auto;
-        /* Bölümleri alt alta sırala */
-        grid-template-areas:
-            "sidebar"
-            "reports"
-            "charts";
-    }
-
-    .sidebar {
-        max-height: 400px; /* Mobil için yüksekliği ayarla */
-    }
-}
-
-
-/* style.css */
-
-/* Sidebar kuralını bununla güncelleyin (max-height ve flex-direction kaldırıldı) */
-.sidebar {
-    grid-area: sidebar;
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-    display: flex; /* Bu kalmalı */
-    flex-direction: column; /* Bu da kalmalı */
-}
-
-/* Personel listesi kuralını bununla güncelleyin (artık info kartı yok, tüm alanı kaplayabilir) */
+/* --- Sol Sütun (Sidebar) --- */
 #personelListesi {
     list-style-type: none;
     padding: 0;
-    margin: 0;
+    margin: 15px 0;
     flex-grow: 1;
     overflow-y: auto;
     padding-right: 5px;
 }
 
-/* Artık gerekmeyen bu kuralı SİLİN veya yorum satırı yapın */
-/*
-#personel-info-karti {
+    #personelListesi li {
+        padding: 10px 15px;
+        margin-bottom: 5px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s, color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        #personelListesi li:hover {
+            background-color: #e9ecef;
+        }
+
+        #personelListesi li.selected {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+        }
+
+.personel-foto {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
     flex-shrink: 0;
-    margin-top: 15px;
-    height: auto;
-    min-height: 120px;
-}
-*/
-
-/* YENİ: Alt bölümdeki info kartı ve grafikleri hizalamak için */
-.details-wrapper {
-    display: grid;
-    /* 3 sütun tanımla: ilki 300px, diğer ikisi kalan alanı eşit paylaşsın */
-    grid-template-columns: 300px 1fr 1fr;
-    gap: 20px;
-    align-items: start; /* Öğeleri dikeyde yukarı hizala */
 }
 
-/* YENİ: Grafik sarmalayıcısını grid'in 2 sütununu kaplayacak şekilde ayarla */
-#anaGrafikAlani {
-    grid-column: span 2; /* 2 sütunluk yer kapla */
-    display: flex; /* İçindeki grafikleri yan yana hizala */
-    gap: 20px;
-    width: 100%;
+#personelListesi li.selected .personel-foto {
+    border: 2px solid white;
 }
 
-/* Mevcut charts-wrapper kuralını güncelleyin, flex-wrap artık gerekmeyebilir */
-.charts-wrapper {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-    margin-bottom: 20px;
+#personel-info-karti {
+    border-top: 1px solid var(--border-color);
+    margin-top: auto;
+    padding-top: 15px;
 }
 
-/* Kartların ve grafiklerin yüksekliğini eşitlemek için */
-.details-wrapper > .kart,
-.details-wrapper .chart-container {
-    height: 450px;
-}
-
-/* YENİ: Mobil cihazlar için details-wrapper'ı alt alta getir */
-@media (max-width: 1200px) {
-    .details-wrapper {
-        grid-template-columns: 1fr; /* Tek sütuna düşür */
+    #personel-info-karti h3 {
+        font-size: 1rem;
     }
 
-    #anaGrafikAlani {
-        grid-column: auto; /* Otomatik yerleşime dön */
-        flex-direction: column; /* Grafikleri alt alta sırala */
-    }
-}
-
-
-
-/* style.css */
-
-/* Kart Başlığı ve Buton */
-.kart-baslik {
+/* --- Rapor Kartları --- */
+.rapor-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 20px;
 }
 
-.kart-buton {
-    font-size: 0.8rem;
-    padding: 4px 10px;
-    background-color: #6c757d;
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-    transition: background-color 0.2s;
+.rapor-kartlari {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
 }
 
-    .kart-buton:hover {
-        background-color: #5a6268;
+/* style.css dosyanızdaki .kart kuralını bununla değiştirin */
+
+.kart {
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    border-left-width: 5px;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    /* YENİ: Kartların yüksekliğini sınırlandırıyoruz */
+    height: 350px; /* Kartların sabit yüksekliği. Bu değeri artırıp azaltabilirsiniz. */
+}
+
+    .kart:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.1);
     }
 
-/* Yeni Rapor Sayfası Stilleri */
+    .kart h3 {
+        margin-top: 0;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+        font-size: 1rem;
+        color: var(--dark-color);
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        align-items: center;
+    }
+
+.kart-ikon {
+    margin-right: 10px;
+    font-size: 1.2rem;
+}
+
+.kart > div, .kart > ul {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+}
+
+.kart ul li {
+    padding: 8px 5px;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 0.9rem;
+}
+
+    .kart ul li:last-child {
+        border-bottom: none;
+    }
+
+.kart p {
+    margin: 4px 0;
+    line-height: 1.6;
+}
+
+.kart-baslik {
+    justify-content: space-between;
+}
+
+/* Kartlara özel renkler */
+.gunun-enleri {
+    border-left-color: var(--warning-color);
+}
+.gunun-eni-tarih {
+    color: var(--primary-color);
+}
+
+.gec-gelenler {
+    border-left-color: var(--danger-color);
+}
+
+.erken-cikanlar {
+    border-left-color: #fd7e14;
+}
+
+.fazla-mesai {
+    border-left-color: var(--primary-color);
+}
+
+.departman-analizi {
+    border-left-color: var(--info-color);
+}
+
+/* style.css dosyanızda bu kuralları güncelleyin */
+
+.charts-section {
+    grid-area: charts;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Bu, esnek kutu içindeki taşmaları önlemek için kritik öneme sahiptir. */
+}
+
+.details-wrapper {
+    display: grid;
+    grid-template-columns: 300px 1fr 1fr;
+    gap: 25px;
+    align-items: stretch; /* DÜZELTME: Öğelerin dikeyde eşitlenmesini sağlar */
+    /* YENİ: Bu sarmalayıcının dikeyde kalan boşluğu doldurmasını sağlar */
+    flex-grow: 1;
+    min-height: 0; /* İçerideki flex/grid yapılarının doğru çalışması için */
+}
+
+/* #anaGrafikAlani için olan kuralı aşağıdaki gibi güncelleyin veya ekleyin */
+/* style.css dosyanızdaki ilgili kuralları bu blokla değiştirin */
+
+#anaGrafikAlani {
+    grid-column: span 2;
+    display: flex;
+    gap: 25px;
+    width: 100%;
+    min-height: 0;
+    align-items: stretch; /* Yüksekliklerin eşitlenmesi için */
+}
+
+.chart-container {
+    min-width: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+    /*padding: 20px;*/
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+}
+
+/* YENİ: Grafiklere farklı genişlik oranları veriyoruz */
+#donutChartContainer {
+    flex: 1; /* 1 birimlik alan kapla */
+}
+
+#barChartContainer {
+    flex: 2; /* 2 birimlik alan kapla (diğerinin iki katı) */
+}
+
+
+.canvas-wrapper {
+    position: relative;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+/* Gün detay kutusunun yeni konumu için stil */
+
+
+
+
+
+.chart-controls {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+/* ==========================================================================
+   4. RESPONSIVE (MOBİL UYUMLULUK)
+   ========================================================================== */
+
+@media (max-width: 1200px) {
+    .details-wrapper {
+        grid-template-columns: 1fr;
+    }
+
+    #anaGrafikAlani {
+        grid-column: auto;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 992px) {
+    .dashboard-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        grid-template-areas: "sidebar" "reports" "charts";
+        height: auto;
+    }
+
+    .sidebar {
+        max-height: 50vh;
+    }
+}
+
+
+/* ==========================================================================
+   5. RAPOR SAYFASI STİLLERİ (rapor.html)
+   ========================================================================== */
+
+.report-page-container {
+    padding: 25px;
+    background-color: transparent; /* Ana container'a arkaplan vermiyoruz */
+}
+
 .rapor-sayfasi-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px 8px 0 0; /* Sadece üst köşeleri yuvarla */
+    border: 1px solid var(--border-color);
+    border-bottom: none;
 }
 
+.rapor-baslik {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--dark-color);
+}
+
+.buton-grup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rapor-butonu {
+    padding: 8px 16px;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+
+    .rapor-butonu:hover {
+        opacity: 0.85;
+    }
+
+    .rapor-butonu.excel {
+        background-color: #1D6F42;
+    }
+
+    .rapor-butonu.pdf {
+        background-color: #D9232D;
+    }
+
 .geri-don-butonu {
-    padding: 8px 15px;
-    background-color: #007bff;
+    padding: 8px 16px;
+    background-color: #6c757d;
     color: white;
     text-decoration: none;
     border-radius: 5px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+    .geri-don-butonu:hover {
+        background-color: #5a6268;
+    }
+
+
+.table-wrapper {
+    background-color: #ffffff;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    border-radius: 0 0 8px 8px; /* Sadece alt köşeleri yuvarla */
+    overflow: hidden; /* Köşelerin düzgün görünmesi için */
 }
 
 .detay-tablosu {
@@ -749,166 +454,328 @@ body {
     border-collapse: collapse;
 }
 
-    .detay-tablosu th, .detay-tablosu td {
-        padding: 12px;
-        border: 1px solid #dee2e6;
+    .detay-tablosu th,
+    .detay-tablosu td {
+        padding: 12px 15px;
+        border-bottom: 1px solid var(--border-color);
         text-align: left;
+        vertical-align: middle;
     }
 
-    .detay-tablosu thead {
-        background-color: #f8f9fa;
+    .detay-tablosu thead tr {
+        background-color: var(--light-gray-color);
     }
 
-.personel-foto-tablo {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    vertical-align: middle;
-}
-
-/* 9'dan sonra gelenler için kritik gecikme stili */
-.detay-tablosu tr.kritik-gecikme {
-    background-color: #fff0f1; /* Açık kırmızı */
-    color: #8B0000; /* Koyu kırmızı yazı */
-    font-weight: bold;
-}
-
-/* 30 dakikadan fazla mesai yapanlar için stil */
-.detay-tablosu tr.onemli-mesai {
-    background-color: #e8f5e9; /* Açık yeşil */
-    color: #1b5e20; /* Koyu yeşil yazı */
-    font-weight: bold;
-}
-
-
-
-
-
-
-
-/* style.css dosyanızın sonuna ekleyin */
-
-.tarih-araligi-secici {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-    .tarih-araligi-secici label {
-        font-size: 0.9rem;
-        color: #6c757d;
+    .detay-tablosu th {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    .tarih-araligi-secici input[type="date"] {
-        padding: 8px;
-        border: 1px solid #dee2e6;
-        border-radius: 5px;
-        font-size: 1rem;
+    /* Tabloda zebra deseni (okunabilirliği artırır) */
+    .detay-tablosu tbody tr:nth-of-type(even) {
+        background-color: #fcfdff;
     }
 
-.rapor-butonu {
-    padding: 9px 15px;
-    background-color: #007bff;
-    color: white;
+    .detay-tablosu tbody tr:hover {
+        background-color: #e9ecef;
+    }
+
+    /* Kritik durumlar için stiller (değişiklik yok) */
+    .detay-tablosu tr.kritik-gecikme {
+        background-color: #fff0f1;
+        color: #8B0000;
+        font-weight: bold;
+    }
+
+    .detay-tablosu tr.onemli-mesai {
+        background-color: #e8f5e9;
+        color: #1b5e20;
+        font-weight: bold;
+    }
+
+
+
+/* ==========================================================================
+   FORM ELEMANLARI (Filtreler, Tarih Seçiciler vb.)
+   ========================================================================== */
+
+/* --- Genel Input ve Select Stilleri --- */
+.filter-controls input[type="text"],
+.filter-controls select,
+.tarih-araligi-secici input[type="date"] {
+    width: 100%;
+    padding: 10px 15px;
+    font-size: 0.95rem;
+    font-family: inherit; /* Sayfanın genel fontunu kullan */
+    color: var(--dark-color);
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+    /* Tıklandığında (focus) oluşacak modern parlama efekti */
+    .filter-controls input[type="text"]:focus,
+    .filter-controls select:focus,
+    .tarih-araligi-secici input[type="date"]:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+    }
+
+    /* Placeholder metnini daha soluk yap */
+    .filter-controls input[type="text"]::placeholder {
+        color: #a0a0a0;
+    }
+
+
+/* --- Özel İkonlu Stiller --- */
+
+/* İsim filtresi için arama ikonu */
+#adFiltre {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    padding-right: 40px; /* İkon için yer aç */
+}
+
+/* Departman filtresi için aşağı ok ikonu */
+#departmanFiltre {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    padding-right: 40px; /* İkon için yer aç */
+}
+
+/* Tarih seçicilerin genişliğini ayarla */
+.tarih-araligi-secici input[type="date"] {
+    width: auto; /* Otomatik genişlik, içeriğine sığsın */
+    min-width: 150px;
+}
+
+/* ==========================================================================
+   BUTON STİLLERİ
+   ========================================================================== */
+
+/* --- Ana Raporlama Butonu (Raporla) --- */
+#raporOlusturBtn {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #ffffff;
+    background-color: var(--primary-color); /* Ana Renk (Mavi) */
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 1rem;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, transform 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-    .rapor-butonu:hover {
-        background-color: #0056b3;
+    #raporOlusturBtn:hover {
+        background-color: #0b5ed7; /* Hover için daha koyu mavi */
+        transform: translateY(-2px); /* Hafifçe yukarı kalkma efekti */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
 
-/* style.css dosyanızın sonuna ekleyin */
-
-/* Günün En'leri kartındaki her bir gün bloğu için stiller */
-.gunun-eni-item {
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #e9ecef; /* Her gün arasına ince bir çizgi */
-}
-
-    /* Son günün altındaki çizgiyi kaldır */
-    .gunun-eni-item:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
+    #raporOlusturBtn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-/* Günün tarihini vurgulamak için */
-.gunun-eni-tarih {
-    color: #007bff;
-    font-size: 1rem;
-    margin-bottom: 8px;
+
+/* --- Kart İçindeki İkincil 'Listele' Butonları --- */
+.kart-buton {
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 5px 12px;
+    color: #555; /* Normalde soluk renk */
+    background-color: #f0f2f5; /* Hafif gri arka plan */
+    border: 1px solid var(--border-color);
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
-/* Her bir satır için daha kompakt bir görünüm */
-.gunun-eni-item p {
-    margin: 4px 0;
+    .kart-buton:hover {
+        background-color: var(--primary-color); /* Üzerine gelince ana renge dönsün */
+        color: #ffffff;
+        border-color: var(--primary-color);
+    }
+
+
+#gunSecici {
+    /* Diğer inputlarla aynı temel stil */
+    padding: 4px 6px;
     font-size: 0.9rem;
-    line-height: 1.4;
+    font-family: inherit;
+    color: var(--dark-color);
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    cursor: pointer;
+    /* Özel aşağı ok ikonu */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 35px; /* İkon için yer aç */
 }
 
+    /* Tıklandığında oluşacak modern parlama efekti */
+    #gunSecici:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+    }
 
-.buton-grup {
+
+
+
+/* ==========================================================================
+   GRAFİK ALANI STİLLERİ
+   ========================================================================== */
+.charts-section {
+    padding-top: 25px;
+    border-top: 1px solid var(--border-color);
     display: flex;
-    align-items: center;
-    gap: 10px; /* Butonlar arası boşluk */
+    flex-direction: column;
+    min-height: 0;
 }
 
-/* .rapor-butonu stilini daha önce eklemiştik, bu genel bir stil olacak */
-.rapor-butonu {
-    padding: 9px 15px;
-    background-color: #28a745; /* Yeşil renk */
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: bold;
-    transition: background-color 0.2s;
+.details-wrapper {
+    display: grid;
+    grid-template-columns: 320px 1fr; /* Info kartı ve ana grafik alanı için 2 sütun */
+    gap: 25px;
+    align-items: stretch; /* Sütunların eşit yüksekliğe esnemesini sağlar */
+    flex-grow: 1;
+    min-height: 0;
 }
 
-    .rapor-butonu:hover {
-        background-color: #218838;
-    }
-
-/* PDF butonu için farklı bir renk */
-#pdf-kaydet-btn {
-    background-color: #dc3545; /* Kırmızı renk */
+#anaGrafikAlani {
+    display: flex;
+    gap: 25px;
+    width: 100%;
+    min-height: 0;
 }
 
-    #pdf-kaydet-btn:hover {
-        background-color: #c82333;
-    }
+.chart-container {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+    /*padding: 20px;*/
+    padding-bottom: 50px;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+}
 
-/* Departman raporu için başlık satırı stili */
-.detay-tablosu tr.departman-baslik-satiri td {
+.gunluk-detay-kutusu {
+    padding: 12px 15px;
     background-color: #e9ecef;
-    font-weight: bold;
-    font-size: 1.1rem;
-    color: #495057;
-    text-align: center;
+    border-radius: 6px;
+    margin-top: 25px; 
+    padding-left:1px;/* Grafikle arasına boşluk koyar */
+    font-size: 0.9rem;
+    line-height: 1.5;
+    border-left: 4px solid var(--primary-color);
 }
 
 
-/* Mevcut .page-header ile ilgili tüm kuralları silip bunu yapıştırın */
+/* ==========================================================================
+   RESPONSIVE (MOBİL UYUMLULUK)
+   ========================================================================== */
+
+/* Orta boy ekranlar ve tabletler için */
+@media (max-width: 1200px) {
+    .details-wrapper {
+        grid-template-columns: 1fr; /* Her şey tek sütuna düşer */
+    }
+}
+
+/* Telefonlar ve küçük tabletler için */
+@media (max-width: 992px) {
+    .dashboard-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        grid-template-areas:
+            "sidebar"
+            "reports"
+            "charts";
+        height: auto;
+    }
+
+    #anaGrafikAlani {
+        flex-direction: column; /* Grafikler alt alta sıralanır */
+    }
+
+    .sidebar {
+        max-height: 50vh;
+    }
+}
+
+
+
+/* ==========================================================================
+   1. TEMEL STİLLER VE DEĞİŞKENLER
+   ========================================================================== */
+:root {
+    --primary-color: #0d6efd;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+    --success-color: #198754;
+    --orange-color: #fd7e14;
+    --dark-color: #212529;
+    --light-gray-color: #f8f9fa;
+    --border-color: #dee2e6;
+    --body-bg-color: #f0f2f5;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--body-bg-color);
+    color: var(--dark-color);
+    margin: 0;
+    padding-top: 70px;
+}
+
+/* ==========================================================================
+   2. ANA YERLEŞİM (LAYOUT)
+   ========================================================================== */
 
 .page-header {
     display: flex;
     align-items: center;
     gap: 20px;
-    /* === YENİ STİLLER === */
-    background-color: #D9232D; /* İstediğiniz kırmızı tonu */
-    color: white; /* İçindeki tüm yazıların rengini beyaz yapar */
-    padding: 15px 25px; /* Başlık çubuğuna iç boşluk verir */
-    margin: 0; /* Dış boşlukları sıfırlar */
+    background-color: #ffffff;
+    padding: 10px 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: 70px;
 }
 
     .page-header .logo {
-        height: 50px; /* Logonun yüksekliği */
+        height: 45px;
         width: auto;
     }
 
@@ -917,31 +784,277 @@ body {
         font-size: 1.8rem;
         flex-grow: 1;
         text-align: center;
-        color: white; /* h1'in rengini de beyaz yapar */
-        font-weight: 600; /* Yazıyı biraz daha dolgun yapar */
-        letter-spacing: 1px; /* Harfler arasına hafif boşluk */
     }
 
+.container {
+    width: 100%;
+    padding: 0;
+}
 
-/* İletişim ikonları için stil */
-.iletisim-ikonlari {
+.dashboard-layout {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "sidebar reports"
+        "sidebar charts";
+    gap: 25px;
+    padding: 25px;
+    height: calc(100vh - 70px);
+}
+
+.sidebar {
+    grid-area: sidebar;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
     display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+}
+
+.reports-section {
+    grid-area: reports;
+}
+
+.charts-section {
+    grid-area: charts;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* ==========================================================================
+   3. BİLEŞENLER
+   ========================================================================== */
+
+/* --- Sol Sütun (Sidebar) --- */
+#personelListesi {
+    list-style-type: none;
+    padding: 0;
+    margin: 15px 0;
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+    #personelListesi li {
+        padding: 10px 15px;
+        margin-bottom: 5px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s, color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        #personelListesi li:hover {
+            background-color: #e9ecef;
+        }
+
+        #personelListesi li.selected {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+        }
+
+.personel-foto {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+#personelListesi li.selected .personel-foto {
+    border: 2px solid white;
+}
+
+#personel-info-karti {
+    border-top: 1px solid var(--border-color);
+    margin-top: auto;
+    padding-top: 15px;
+}
+
+/* --- Rapor Kartları --- */
+.rapor-header {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 15px; /* İkonlar arası boşluk */
+    margin-bottom: 20px;
 }
 
-.icon-link {
-    display: inline-block;
-    color: #6c757d; /* İkon rengi */
-    transition: color 0.2s;
+.rapor-kartlari {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
 }
 
-    .icon-link:hover {
-        color: #007bff; /* Hover durumunda ikon rengi */
+.kart {
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    border-left-width: 5px;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    min-height: 320px;
+}
+
+    .kart:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.1);
     }
 
-    .icon-link svg {
-        width: 18px;
-        height: 18px;
-        fill: currentColor; /* SVG'nin rengi, parent'ı olan <a> etiketinden gelir */
+    .kart h3 {
+        margin-top: 0;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+        font-size: 1rem;
+        color: var(--dark-color);
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        align-items: center;
     }
+
+.kart-ikon {
+    margin-right: 10px;
+    font-size: 1.2rem;
+}
+
+.kart > div, .kart > ul {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+}
+
+.kart-baslik {
+    justify-content: space-between;
+}
+/* Kart Renkleri */
+.gunun-enleri {
+    border-left-color: var(--warning-color);
+}
+
+.gec-gelenler {
+    border-left-color: var(--danger-color);
+}
+
+.erken-cikanlar {
+    border-left-color: var(--orange-color);
+}
+
+.fazla-mesai {
+    border-left-color: var(--primary-color);
+}
+
+.departman-analizi {
+    border-left-color: var(--info-color);
+}
+
+/* --- Grafik Alanı --- */
+.charts-section {
+    padding-top: 25px;
+    border-top: 1px solid var(--border-color);
+}
+
+.details-wrapper {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 25px;
+    align-items: stretch;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+#anaGrafikAlani {
+    display: flex;
+    gap: 25px;
+    width: 100%;
+    min-height: 0;
+}
+
+.chart-container {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    min-height: 450px;
+    
+}
+
+#donutChartContainer {
+    flex: 0 0 40%;
+}
+/* Pasta grafiğe sabit bir oran verelim */
+.canvas-wrapper {
+    position: relative;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.gunluk-detay-kutusu {
+    margin-top: 25px;
+    padding: 15px;
+    background-color: var(--light-gray-color);
+    border-radius: 8px;
+}
+
+/* --- Form ve Buton Elemanları --- */
+#raporOlusturBtn, .kart-buton {
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.chart-controls {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+
+}
+
+/* ==========================================================================
+   4. RESPONSIVE (MOBİL UYUMLULUK)
+   ========================================================================== */
+
+@media (max-width: 1200px) {
+    /* Ana yerleşimi dikey hale getir */
+    .dashboard-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        grid-template-areas: "sidebar" "reports" "charts";
+        height: auto;
+    }
+
+    .sidebar {
+        max-height: none;
+    }
+    /* Alt bölümdeki detayları dikey hale getir */
+    .details-wrapper {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Küçük ekranlarda grafiklerin kendilerini dikey hale getirmesini sağla */
+    #anaGrafikAlani {
+        flex-direction: column;
+    }
+
+    #donutChartContainer {
+        flex-basis: 350px; /* Pasta grafik için sabit bir yükseklik */
+    }
+}
+
