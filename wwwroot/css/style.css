@@ -47,16 +47,12 @@ body {
     right: 0;
     z-index: 1000;
     height: 80px;
-    /* === ARKA PLAN SEÇENEKLERİ (Birini seçip diğerlerini silin) === */
-    /* Seçenek 1: Canlı ve Modern Kırmızı Geçişi */
+
     background: linear-gradient(90deg, #ffffff, white);
-    /* Seçenek 2: Koyu ve Klasik Kırmızı Geçişi */
-    /* background: linear-gradient(90deg, #D32F2F, #B71C1C); */
-    /* Seçenek 3: Daha Yumuşak ve Açık Tonlu Geçiş */
-    /* background: linear-gradient(90deg, #EF5350, #E53935); */
+
 }
 
-    /* Logo ve Başlık stilleriniz aynı kalabilir */
+
     .page-header .logo {
         height: 55px;
         width: auto;
@@ -153,15 +149,23 @@ body {
     flex-shrink: 0;
 }
 
+.personel-info-foto {
+    /* Boyutları artırdık */
+    display: flex;
+    width: 80px;
+    height: 80px;
+    border-radius: 15%; /* Yuvarlak görünümü koru */
+    object-fit: cover; /* Resmin orantısını koru */
+    flex-shrink: 0;
+    /* GÖRSEL İYİLEŞTİRME: Fotoğrafa gölge ve çerçeve ekleyelim */
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
 #personelListesi li.selected .personel-foto {
     border: 2px solid white;
 }
 
-#personel-info-karti {
-    border-top: 1px solid var(--border-color);
-    margin-top: auto;
-    padding-top: 15px;
-}
+
 
     #personel-info-karti h3 {
         font-size: 1rem;
@@ -365,7 +369,7 @@ body {
     }
 
     .sidebar {
-        max-height: 50vh;
+        min-height: 40vh;
     }
 }
 
@@ -719,9 +723,7 @@ body {
         flex-direction: column; /* Grafikler alt alta sıralanır */
     }
 
-    .sidebar {
-        max-height: 50vh;
-    }
+    
 }
 
 
@@ -806,6 +808,7 @@ body {
 .sidebar {
     grid-area: sidebar;
     background-color: #ffffff;
+    min-height:900px;
     padding: 20px;
     border-radius: 8px;
     display: flex;
@@ -876,6 +879,7 @@ body {
     border-top: 1px solid var(--border-color);
     margin-top: auto;
     padding-top: 15px;
+    
 }
 
 /* --- Rapor Kartları --- */
@@ -903,7 +907,9 @@ body {
     box-shadow: var(--card-shadow);
     transition: transform 0.2s, box-shadow 0.2s;
     min-height: 320px;
+
 }
+
 
     .kart:hover {
         transform: translateY(-4px);
@@ -1047,14 +1053,302 @@ body {
     }
 }
 
+
+.view-toggle-btn {
+    width: 45px;
+    height: 45px;
+    border: 1px solid var(--border-color);
+    background-color: #ffffff;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+    margin-right: 10px; /* Raporla butonundan ayırmak için */
+}
+
+    .view-toggle-btn:hover {
+        background-color: #f1f3f5;
+    }
+
+    .view-toggle-btn svg {
+        width: 25px;
+        height: 25px;
+        fill: #6c757d;
+    }
+
+/* Kartların normal ve küçültülmüş halleri arasında yumuşak geçiş için */
+.kart {
+    transition: all 0.4s ease-in-out;
+}
+
+    .kart > ul, .kart > div {
+        transition: all 0.4s ease-in-out;
+    }
+
+/* --- KÜÇÜLTÜLMÜŞ GÖRÜNÜM (COMPACT MODE) --- */
+/* Ana sarmalayıcıya .compact-view sınıfı eklendiğinde bu stiller aktif olur */
+
+.rapor-kartlari.compact-view .kart {
+    min-height: 80px; /* Küçültülmüş yükseklik */
+    height: 80px;
+    padding: 15px;
+}
+
+    .rapor-kartlari.compact-view .kart h3 {
+        font-size: 0.9rem;
+        padding-bottom: 8px;
+        margin-bottom: 10px;
+    }
+
+.rapor-kartlari.compact-view .kart-ikon {
+    font-size: 1.1rem;
+}
+
+.rapor-kartlari.compact-view .kart ul li {
+    padding: 2px 3px;
+    font-size: 0.85rem;
+}
+
+/* Başlığın sol tarafını gruplayan sarmalayıcı */
+.rapor-header-sol {
+    display: flex;
+    flex-direction: column; /* DÜZELTME: Butonu başlığın altına almak için dikey sıralama */
+    align-items: flex-start; /* Öğeleri sola hizala */
+    gap: 10px; /* Başlık ve buton arasına boşluk */
+}
+
+    .rapor-header-sol h2 {
+        margin: 0;
+    }
+
+
+
+.view-toggle-btn {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--border-color);
+    background-color: #ffffff;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+    position: relative; 
+}
+
+    .view-toggle-btn:hover {
+        background-color: #f1f3f5;
+    }
+
+#toggle-size-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px; 
+    font-weight: 700; 
+    line-height: 0; 
+    width: 20px;
+    text-align: center;
+    color: #495057; 
+}
+
+    .view-toggle-btn::after {
+        content: attr(data-tooltip); 
+        position: absolute;
+        bottom: 110%; 
+        left: 50%;
+        transform: translateX(-50%);
+      
+        background-color: #343a40;
+        color: #ffffff;
+        padding: 3px 5px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        white-space: nowrap; 
+       
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s ease-in-out;
+        pointer-events: none; 
+    }
+
+  
+    .view-toggle-btn:hover::after {
+        opacity: 1;
+        visibility: visible;
+    }
+
+
+
+.view-toggle-button {
+    
+    display: inline-flex; 
+    align-items: center;
+    gap: 8px; 
+    padding: 8px 14px; 
+
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+    .view-toggle-button:hover {
+        background-color: #f1f3f5;
+        border-color: #adb5bd;
+    }
+
+
+    .view-toggle-button:focus-within {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+    }
+
+
+#toggle-size-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: bold;
+    line-height: 1;
+    width: 16px;
+    text-align: center;
+    color: #495057;
+}
+#personel-info-karti {
+    border-top: 1px solid var(--border-color);
+    margin-top: auto;
+    padding-top: 15px;
+    flex-shrink: 0;
+
+}
+
+#toggle-size-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #495057;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1001;
+}
+
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    align-content:center;
+    justify-content: center;
+    z-index: 1000;
+    
+
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+
+    .modal.is-visible {
+        opacity: 1;
+        visibility: visible;
+    }
+
+
+body.modal-open {
+    overflow: hidden;
+}
+
+
+.modal-content {
+    position: relative;
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    z-index: 1002;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    width: 50vw;
+    max-width: 900px;
+    min-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+
+
+
+.modal.is-visible .modal-content {
+    transform: scale(1);
+}
+.modal.is-visible .modal-content {
+    transform: scale(1);
+}
+
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 2.5rem;
+    font-weight: 300;
+    line-height: 1;
+    color: #aaa;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+    .modal-close:hover {
+        color: #333;
+    }
+.personel-info-content{
+    align-items:center;
+    align-content:center;
+    justify-content:center;
+    justify-items:center;
+}
+
+
+
+
 @media (max-width: 768px) {
-    /* Küçük ekranlarda grafiklerin kendilerini dikey hale getirmesini sağla */
+    .modal-content {
+        width: 90vw;
+        min-width: 0;
+        padding: 20px;
+    }
+}
+
+
+@media (max-width: 768px) {
+
     #anaGrafikAlani {
         flex-direction: column;
     }
 
     #donutChartContainer {
-        flex-basis: 350px; /* Pasta grafik için sabit bir yükseklik */
+        flex-basis: 350px;
     }
 }
-

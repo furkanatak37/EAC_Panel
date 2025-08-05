@@ -48,11 +48,6 @@
         });
 });
 
-
-// === EKSİK OLAN VE HATAYA NEDEN OLAN FONKSİYON ===
-/**
- * Erken çıkanlar raporunu oluşturur.
- */
 function renderErkenCikanlarRaporu(data, baslangic, bitis) {
     const formatliBaslangic = new Date(baslangic).toLocaleDateString('tr-TR');
     const formatliBitis = new Date(bitis).toLocaleDateString('tr-TR');

@@ -9,6 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/2.2.1/chartjs-plugin-annotation.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 </head>
+
 <body>
 
     <header class="page-header">
@@ -35,20 +36,33 @@
 
             <div class="reports-section">
                 <div class="rapor-header">
-                    <h2 id="detayBaslik">Tarih Aralığı Raporları</h2>
+                    <div class="rapor-header-sol">
+                        <h2 id="detayBaslik">Tarih Aralığı Raporları</h2>
+
+                        <div id="toggle-size-btn" class="view-toggle-button">
+                            <span id="toggle-size-label"></span>  <span id="toggle-size-icon"></span>
+
+                        </div>
+
+                    </div>
+
                     <div class="tarih-araligi-secici">
+
                         <label for="baslangicTarih">Başlangıç:</label>
                         <input type="date" id="baslangicTarih">
                         <label for="bitisTarih">Bitiş:</label>
                         <input type="date" id="bitisTarih">
                         <button id="raporOlusturBtn" class="rapor-butonu">Raporla</button>
+
+
                     </div>
+
                 </div>
                 <div class="rapor-kartlari">
 
                     <div class="kart gec-gelenler">
                         <h3 class="kart-baslik">
-                            <span><span class="kart-ikon">⏰</span>Geç Gelenler (08:45 Sonrası)</span>
+                            <span><span class="kart-ikon">⏰</span>Geç Gelenler (08:30 Sonrası)</span>
                             <a href="#" id="gec-gelenler-detay-btn" class="kart-buton" target="_blank">Listele</a>
                         </h3>
                         <ul id="gec-gelenler-listesi"></ul>
@@ -116,5 +130,17 @@
         </div>
     </main>
     <script src="js/script.js" defer></script>
+
+
+    <div class="modal" id="info-modal">
+        <div class="modal-overlay" data-close-modal></div>
+        <div class="modal-content">
+            <button class="modal-close" data-close-modal>&times;</button>
+            <div id="modal-body-content">
+            </div>
+        </div>
+    </div>
+
+  
 </body>
 </html>

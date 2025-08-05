@@ -1,60 +1,61 @@
-﻿// =================================================================================
-// GLOBAL DEĞİŞKENLER VE SABİTLER
-// =================================================================================
+﻿import { compressIcon, expandIcon } from './icons.js'; 
 
-// HTML Elementleri
-// script.js dosyasının en üstü
 
-// ... diğer const tanımlamalarından sonra
 const personelInfoIcerik = document.getElementById('personel-info-icerik');
 const personelListesi = document.getElementById('personelListesi');
-const detayBaslik = document.getElementById('detayBaslik');
+
 const adFiltreInput = document.getElementById('adFiltre');
 const departmanFiltreSelect = document.getElementById('departmanFiltre');
-const raporTarihInput = document.getElementById('raporTarih');
 const gununEnleriIcerik = document.getElementById('gunun-enleri-icerik');
 const gecGelenlerListesi = document.getElementById('gec-gelenler-listesi');
 const erkenCikanlarListesi = document.getElementById('erken-cikanlar-listesi');
 
 const departmanAnalizIcerik = document.getElementById('departman-analiz-icerik');
 const fazlaMesaiListesi = document.getElementById('fazla-mesai-listesi');
-// Kişi detayları için elementler
 const baslangicTarihInput = document.getElementById('baslangicTarih');
 const bitisTarihInput = document.getElementById('bitisTarih');
+
+
+
+
+//rapor kartlarının boyut butonları
+const toggleSizeBtn = document.getElementById('toggle-size-btn');
+const toggleSizeIcon = document.getElementById('toggle-size-icon');
+const toggleSizeLabel = document.getElementById('toggle-size-label');
+const raporKartlariContainer = document.querySelector('.rapor-kartlari');
+
+
+//event listener lar
+document.addEventListener('DOMContentLoaded', initializePage);
+adFiltreInput.addEventListener('input', applyFilters);
+gunSeciciSelect.addEventListener('change', handleGunSeciciChange);
+departmanFiltreSelect.addEventListener('change', applyFilters);
+raporOlusturBtn.addEventListener('click', guncelleAralikRaporlari);
+
+
+//buton tanımlamaları
+const gecGelenlerDetayBtn = document.getElementById('gec-gelenler-detay-btn');
+const fazlaMesaiDetayBtn = document.getElementById('fazla-mesai-detay-btn');
 const raporOlusturBtn = document.getElementById('raporOlusturBtn');
 const departmanDetayBtn = document.getElementById('departman-detay-btn');
 const erkenCikanlarDetayBtn = document.getElementById('erken-cikanlar-detay-btn');
 
 
-// Olay dinleyicilerini güncelleyin (raporTarihInput'u kaldırıp raporOlusturBtn'yi ekleyin)
-raporOlusturBtn.addEventListener('click', guncelleAralikRaporlari);
-
-const gecGelenlerDetayBtn = document.getElementById('gec-gelenler-detay-btn');
-const fazlaMesaiDetayBtn = document.getElementById('fazla-mesai-detay-btn');
-
 const kisiDetayBaslik = document.getElementById('kisiDetayBaslik');
 const barChartContainer = document.getElementById('barChartContainer');
 const donutChartContainer = document.getElementById('donutChartContainer');
 const gunlukDetayKutusu = document.getElementById('gunlukDetay');
-// ... diğer const tanımlamalarından sonra
 const gunSeciciSelect = document.getElementById('gunSecici');
-// =================================================================================
-// EKLENTİ KAYDI
-// =================================================================================
-Chart.register(ChartDataLabels); // Datalabels eklentisini tüm grafikler için aktif et
 
-// =================================================================================
-// GLOBAL DEĞİŞKENLER VE SABİTLER
-// =================================================================================
-// ... (dosyanın geri kalanı aynı)
-// ... diğer let tanımlamalarından sonra
-let currentPersonApiData = []; // Aktif olarak seçili kişinin tüm gün verisini tutmak için
-// Durum Değişkenleri
+
+Chart.register(ChartDataLabels); 
+
+let currentPersonApiData = [];
 let mesaiChart = null;
 let durumChart = null;
-let allPersonnel = []; // API'den gelen tüm personeli saklamak için
+let allPersonnel = [];
 
-// Sabitler
+
 const CHART_COLORS = {
     normal: 'rgba(75, 192, 192, 0.6)',
     eksik: 'rgba(255, 99, 132, 0.6)',
@@ -62,62 +63,39 @@ const CHART_COLORS = {
     normal_border: 'rgba(75, 192, 192, 1)',
     eksik_border: 'rgba(255, 99, 132, 1)',
 };
-/**
- * Grafikteki tarihlerle gün seçici dropdown'ını doldurur.
- * @param {Array<string>} tarihler - Grafikteki tarih etiketleri dizisi.
- */
+
 function populateGunSecici(tarihler) {
-    gunSeciciSelect.innerHTML = '<option value="">Tarih Seçin...</option>'; // Başlangıç metni
+    gunSeciciSelect.innerHTML = '<option value="">Tarih Seçin...</option>';
     tarihler.forEach((tarih, index) => {
         const option = document.createElement('option');
-        option.value = index; // Değer olarak dizideki sırasını (index) veriyoruz
+        option.value = index; 
         option.textContent = tarih;
         gunSeciciSelect.appendChild(option);
 
     });
 }
 
-/**
- * Dropdown'dan bir gün seçildiğinde tetiklenir.
- */
-
 
 
 function handleGunSeciciChange() {
     const selectedIndex = parseInt(gunSeciciSelect.value);
 
-    if (isNaN(selectedIndex)) { // "Tarih Seçin..." seçeneği seçilirse bir şey yapma
-        mesaiChart.setActiveElements([]); // Grafikteki aktif seçimi kaldır
+    if (isNaN(selectedIndex)) { 
+        mesaiChart.setActiveElements([]); 
         mesaiChart.update();
         return;
     }
 
-    // İlgili günün detaylarını göster
+   
     displayDailyDetails(currentPersonApiData[selectedIndex]);
 
-    // Grafikteki ilgili çubuğu programatik olarak "aktif" (vurgulu) hale getir
     mesaiChart.setActiveElements([{ datasetIndex: 0, index: selectedIndex }]);
     mesaiChart.update();
 }
 
-// =================================================================================
-// OLAY DİNLEYİCİLERİ VE BAŞLANGIÇ
-// =================================================================================
 
-// Sayfa yüklendiğinde ve DOM hazır olduğunda uygulamayı başlat
-document.addEventListener('DOMContentLoaded', initializePage);
-
-// Filtre inputları değiştiğinde filtreleme fonksiyonunu çağır
-adFiltreInput.addEventListener('input', applyFilters);
-gunSeciciSelect.addEventListener('change', handleGunSeciciChange);
-departmanFiltreSelect.addEventListener('change', applyFilters);
-//raporTarihInput.addEventListener('change', () => guncelleGunlukRaporlar(raporTarihInput.value));
-/**
- * Fazla mesai yapanları listeler.
- * @param {Array} personelData - O güne ait tüm personel verisi.
- */
 function renderFazlaMesai(personelData) {
-    // Sadece fazla mesaisi 0'dan büyük olanları filtrele
+
     const mesaiYapanlar = personelData.filter(p => (p.FazlaMesaiDakika || p.fazlaMesaiDakika) > 0);
 
     fazlaMesaiListesi.innerHTML = '';
@@ -126,7 +104,6 @@ function renderFazlaMesai(personelData) {
         return;
     }
 
-    // En çok mesai yapanı en üste al
     mesaiYapanlar.sort((a, b) => (b.FazlaMesaiDakika || b.fazlaMesaiDakika) - (a.FazlaMesaiDakika || a.fazlaMesaiDakika));
 
     mesaiYapanlar.forEach(p => {
@@ -143,51 +120,37 @@ function renderFazlaMesai(personelData) {
         fazlaMesaiListesi.appendChild(li);
     });
 }
-/**
- * Grafikteki tarihlerle gün seçici dropdown'ını doldurur.
- * @param {Array<string>} tarihler - Grafikteki tarih etiketleri dizisi.
- */
+
 function populateGunSecici(tarihler) {
-    gunSeciciSelect.innerHTML = '<option value="">Tarih Seçin...</option>'; // Başlangıç metni
+    gunSeciciSelect.innerHTML = '<option value="">Tarih Seçin...</option>'; 
     tarihler.forEach((tarih, index) => {
         const option = document.createElement('option');
-        option.value = index; // Değer olarak dizideki sırasını (index) veriyoruz
+        option.value = index;
         option.textContent = tarih;
         gunSeciciSelect.appendChild(option);
     });
 }
 
-/**
- * Dropdown'dan bir gün seçildiğinde tetiklenir.
- */
+
 function handleGunSeciciChange() {
     const selectedIndex = parseInt(gunSeciciSelect.value);
 
-    if (isNaN(selectedIndex)) { // "Tarih Seçin..." seçeneği seçilirse bir şey yapma
-        mesaiChart.setActiveElements([]); // Grafikteki aktif seçimi kaldır
+    if (isNaN(selectedIndex)) { 
+        mesaiChart.setActiveElements([]); 
         mesaiChart.update();
         return;
     }
 
-    // İlgili günün detaylarını göster
+   
     displayDailyDetails(currentPersonApiData[selectedIndex]);
 
-    // Grafikteki ilgili çubuğu programatik olarak "aktif" (vurgulu) hale getir
+  
     mesaiChart.setActiveElements([{ datasetIndex: 0, index: selectedIndex }]);
     mesaiChart.update();
 }
-// =================================================================================
-// ANA KONTROL FONKSİYONLARI
-// =================================================================================
 
-/**
- * Sayfa ilk yüklendiğinde çalışacak ana fonksiyon.
- */
-/**
- * Sayfa ilk yüklendiğinde çalışacak ana fonksiyon.
- */
 function initializePage() {
-    // Varsayılan olarak bu ayın başlangıcını ve sonunu ayarla
+  
     const today = new Date();
     const ayinIlkGunu = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
     const ayinSonGunu = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
@@ -195,14 +158,12 @@ function initializePage() {
     baslangicTarihInput.value = ayinIlkGunu;
     bitisTarihInput.value = ayinSonGunu;
 
-    setInitialReportState(); // Başlangıç mesajlarını göster
+    setInitialReportState();
     personelleriGetir();
-    guncelleAralikRaporlari(); // Sayfa ilk açıldığında varsayılan aralık için raporu getir
+    guncelleAralikRaporlari(); 
 }
 
-/**
- * Rapor kartlarını başlangıç durumuna getirir ve kullanıcıya mesaj gösterir.
- */
+
 function setInitialReportState() {
     const initialMessage = 'Raporu görüntülemek için lütfen bir tarih seçin.';
     gecGelenlerListesi.innerHTML = `<li>${initialMessage}</li>`;
@@ -211,9 +172,7 @@ function setInitialReportState() {
     gununEnleriIcerik.innerHTML = `<p>${initialMessage}</p>`;
     departmanAnalizIcerik.innerHTML = `<p>${initialMessage}</p>`;
 }
-/**
- * API'den tüm personellerin listesini çeker.
- */
+
 function personelleriGetir() {
     fetch('/api/data/personeller')
         .then(response => {
@@ -231,16 +190,12 @@ function personelleriGetir() {
         });
 }
 
-/**
- * Belirtilen tarih için tüm günlük raporları getirir ve günceller.
- * @param {string} tarihString - 'YYYY-MM-DD' formatında tarih.
- */
-// guncelleGunlukRaporlar fonksiyonunun içini aşağıdaki gibi güncelleyin
-
-// script.js dosyanızdaki mevcut guncelleAralikRaporlari ve ilgili render fonksiyonlarını
-// aşağıdaki tam ve güncel halleriyle değiştirin.
 
 async function guncelleAralikRaporlari() {
+
+    raporKartlariContainer.classList.remove('compact-view');
+    toggleSizeIcon.innerHTML = compressIcon;
+    toggleSizeLabel.textContent = "Görünümü Küçült";
     const baslangic = baslangicTarihInput.value;
     const bitis = bitisTarihInput.value;
     if (!baslangic || !bitis || new Date(baslangic) > new Date(bitis)) {
@@ -255,7 +210,6 @@ async function guncelleAralikRaporlari() {
 
     gecGelenlerListesi.innerHTML = '<li>Yükleniyor...</li>';
     erkenCikanlarListesi.innerHTML = '<li>Yükleniyor...</li>';
-
     fazlaMesaiListesi.innerHTML = '<li>Yükleniyor...</li>';
     gununEnleriIcerik.innerHTML = '<p>Yükleniyor...</p>';
     departmanAnalizIcerik.innerHTML = '<p>Yükleniyor...</p>';
@@ -265,10 +219,9 @@ async function guncelleAralikRaporlari() {
         if (!response.ok) throw new Error(`API Hatası: ${response.status}`);
         const data = await response.json();
 
-        // Gelen verinin yeni yapısına göre ilgili render fonksiyonlarını çağır
+
         renderGecKalanlarAralik(data.personelOzetleri || []);
         renderErkenCikanlarAralik(data.personelOzetleri || []);
-
         renderFazlaMesaiAralik(data.personelOzetleri || []);
         renderAraliginEnleri(data.araliginEnleri);
         renderDepartmanAnaliziAralik(data.departmanOzetleri || []);
@@ -283,6 +236,9 @@ async function guncelleAralikRaporlari() {
         gununEnleriIcerik.innerHTML = '<p>Hata!</p>';
         departmanAnalizIcerik.innerHTML = '<p>Hata!</p>';
     }
+
+
+
 }
 
 function renderGecKalanlarAralik(personelOzetleri) {
@@ -300,22 +256,18 @@ function renderGecKalanlarAralik(personelOzetleri) {
     });
 }
 
-/**
- * Gelen özet verisine göre "Erken Çıkanlar" kartını doldurur.
- */
 function renderErkenCikanlarAralik(personelOzetleri) {
-    // Backend'den 'ErkenCikmaSayisi' adında bir veri bekliyoruz.
-    // Eğer bu veri yoksa, fonksiyon çalışmaz. Lütfen C# kodunuzu kontrol edin.
+
     const erkenCikanlar = personelOzetleri.filter(p => (p.erkenCikmaSayisi || p.ErkenCikmaSayisi) > 0);
 
-    erkenCikanlarListesi.innerHTML = ''; // Listeyi temizle
+    erkenCikanlarListesi.innerHTML = ''; 
 
     if (erkenCikanlar.length === 0) {
         erkenCikanlarListesi.innerHTML = '<li>Bu aralıkta erken çıkan personel bulunamadı.</li>';
         return;
     }
 
-    // En çok erken çıkandan en aza doğru sırala
+
     erkenCikanlar.sort((a, b) => (b.erkenCikmaSayisi || b.ErkenCikmaSayisi) - (a.erkenCikmaSayisi || a.ErkenCikmaSayisi));
 
     erkenCikanlar.forEach(p => {
@@ -350,18 +302,18 @@ function renderFazlaMesaiAralik(personelOzetleri) {
 
 
 function renderAraliginEnleri(enlerData) {
-    gununEnleriIcerik.innerHTML = ''; // Önceki içeriği temizle
+    gununEnleriIcerik.innerHTML = '';
 
     if (!enlerData || enlerData.length === 0) {
         gununEnleriIcerik.innerHTML = '<p>Bu aralık için özet bilgi bulunamadı.</p>';
         return;
     }
 
-    // Her gün için bir HTML bloğu oluşturup ekleyelim
+  
     const fragment = document.createDocumentFragment();
     enlerData.forEach(gununEni => {
         const gunDiv = document.createElement('div');
-        gunDiv.className = 'gunun-eni-item'; // Stil için class ataması
+        gunDiv.className = 'gunun-eni-item'; 
 
         const tarih = new Date(gununEni.tarih).toLocaleDateString('tr-TR', { weekday: 'long', day: '2-digit', month: 'long' });
         const erkenSaat = new Date(gununEni.enErkenGelisSaati).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
@@ -378,9 +330,7 @@ function renderAraliginEnleri(enlerData) {
     gununEnleriIcerik.appendChild(fragment);
 }
 
-/**
- * "Departman Analizi" kartını doldurur.
- */
+
 function renderDepartmanAnaliziAralik(departmanOzetleri) {
     departmanAnalizIcerik.innerHTML = '';
     if (departmanOzetleri.length === 0) {
@@ -390,7 +340,7 @@ function renderDepartmanAnaliziAralik(departmanOzetleri) {
 
     departmanOzetleri.forEach(dep => {
         const p = document.createElement('p');
-        // SQL'den gelen 'HH:mm:ss.fffffff' formatını 'HH:mm' olarak göstermek için substring kullanıyoruz.
+      
         const ortGiris = dep.ortalamaGiris.substring(0, 5);
         const ortCikis = dep.ortalamaCikis.substring(0, 5);
 
@@ -399,14 +349,6 @@ function renderDepartmanAnaliziAralik(departmanOzetleri) {
     });
 }
 
-/**
- * Bir kişiye tıklandığında çalışan ana fonksiyon.
- */
-
-
-// =================================================================================
-// ARAYÜZ GÜNCELLEME VE RENDER FONKSİYONLARI
-// =================================================================================
 
 function applyFilters() {
     const nameFilter = adFiltreInput.value.toLowerCase();
@@ -421,20 +363,16 @@ function applyFilters() {
     renderPersonnelList(filteredList);
 }
 
-// script.js dosyasındaki renderPersonnelList fonksiyonunu aşağıdakiyle değiştirin.
 
-/**
- * Verilen personel dizisini alıp fotoğraflı HTML listesini oluşturur.
- */
 function renderPersonnelList(personnel) {
-    personelListesi.innerHTML = ''; // Mevcut listeyi temizle
+    personelListesi.innerHTML = ''; 
 
     if (!personnel || personnel.length === 0) {
         personelListesi.innerHTML = '<li>Sonuç bulunamadı.</li>';
         return;
     }
 
-    // Fotoğrafı olmayanlar için varsayılan bir yer tutucu (SVG formatında)
+  
     const placeholderImage = `
         <svg class="personel-foto" xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="#6c757d" viewBox="0 0 16 16">
             <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
@@ -449,11 +387,11 @@ function renderPersonnelList(personnel) {
 
         let imageHtml = placeholderImage;
         if (fotoBase64) {
-            // Eğer fotoğraf verisi varsa, data URL formatında bir <img> etiketi oluştur.
+           
             imageHtml = `<img src="data:image/jpeg;base64,${fotoBase64}" alt="${ad} ${soyad}" class="personel-foto">`;
         }
 
-        // Liste elemanının içeriğini resim ve isimle doldur.
+      
         li.innerHTML = `${imageHtml} <span>${ad} ${soyad}</span>`;
 
         li.onclick = () => kisiSecildi(userId, `${ad} ${soyad}`, li);
@@ -578,10 +516,7 @@ function processChartData(apiData) {
     });
     return { barData, donutData };
 }
-/**
- * Belirtilen personelin detay bilgilerini API'den çeker ve info kartında gösterir.
- * @param {number} userId - Bilgileri getirilecek personelin ID'si.
- */
+
 async function fetchAndDisplayPersonelInfo(userId) {
     personelInfoIcerik.innerHTML = '<i>Bilgiler yükleniyor...</i>';
     try {
@@ -593,21 +528,37 @@ async function fetchAndDisplayPersonelInfo(userId) {
         if (!infoDataArray || infoDataArray.length === 0) throw new Error("Personel bilgisi boş geldi.");
         const infoData = infoDataArray[0];
 
-        // DÜZELTME: API'den gelen gerçek kolon adları (userID, giris, tel vb.) kullanıldı.
         const sicilNo = infoData.personleNo || 'N/A';
         const giris = infoData.giris;
         const telefon = infoData.tel || 'N/A';
         const ad = infoData.ad;
         const soyad = infoData.soyad;
+        const fotoBase64 = infoData.foto || infoData.foto;
 
+        const placeholderImage = `
+        <svg class="personel-info-foto" xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="#6c757d" viewBox="0 0 16 16">
+            <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        </svg>`;
 
+        
+            
+
+            let imageHtml = placeholderImage;
+            if (fotoBase64) {
+                imageHtml = `<img src="data:image/jpeg;base64,${fotoBase64}" alt="${ad} ${soyad}" class="personel-info-foto">`;
+            }
+
+        userId = parseInt(userId);
         const infoHtml = `
+          <div class="personel-info-content">
+                    ${imageHtml}
+
           <p><strong>Ad:</strong> ${ad}</p>
             <p><strong>Soyad:</strong> ${soyad}</p>
-            <p><strong>Personel No:</strong> ${sicilNo}</p>
             <p><strong>USER No:</strong> ${userId}</p>
             <p><strong>İşe Giriş Tarihi:</strong> ${giris}</p>
             <p><strong>Telefon:</strong> ${telefon}</p>
+            </div>
         `;
         personelInfoIcerik.innerHTML = infoHtml;
 
@@ -616,51 +567,37 @@ async function fetchAndDisplayPersonelInfo(userId) {
         personelInfoIcerik.innerHTML = '<span style="color: red;">Bilgiler yüklenemedi.</span>';
     }
 }
-// script.js dosyasından ilgili elementleri en üste ekleyin
 const personelInfoKarti = document.getElementById('personel-info-karti');
 const anaGrafikAlani = document.getElementById('anaGrafikAlani');
 
-
-// kisiSecildi fonksiyonunu aşağıdakiyle güncelleyin
-
-// script.js dosyanızdaki bu fonksiyonu güncelleyin
-
 function kisiSecildi(userId, adSoyad, clickedListItem) {
-    // 1. Arayüzü güncelle
     document.querySelectorAll('#personelListesi li').forEach(item => item.classList.remove('selected'));
     if (clickedListItem) clickedListItem.classList.add('selected');
 
-    // 2. Personel Info kartını doldurmaya başla
     fetchAndDisplayPersonelInfo(userId);
 
-    // 3. Grafik ve info alanlarını ve başlıkları ayarla
     kisiDetayBaslik.textContent = `${adSoyad} - Mesai Detayları`;
     gunlukDetayKutusu.innerHTML = 'Veriler yükleniyor...';
 
-    // GÖRÜNÜRLÜK AYARLARI
     kisiDetayBaslik.style.display = 'block';
     gunlukDetayKutusu.style.display = 'block';
     personelInfoKarti.style.display = 'flex';
     anaGrafikAlani.style.display = 'flex';
 
-    // 4. Önceki grafikleri temizle
     if (mesaiChart) mesaiChart.destroy();
     if (durumChart) durumChart.destroy();
     gunSeciciSelect.innerHTML = '<option value="">Yükleniyor...</option>';
 
-    // === YENİ EKLENEN SATIR: EKRANI AŞAĞI KAYDIRMA ===
-    // Grafik başlığına doğru yumuşak bir şekilde kaydır.
 
-    // 5. Yeni grafik verilerini çek ve oluştur
     fetch(`/api/data/mesai/${userId}`)
         .then(response => response.json())
         .then(apiData => {
             currentPersonApiData = apiData;
             if (apiData.length === 0) {
 
-                gunlukDetayKutusu.innerHTML = 'Bu kişiye ait görüntülenecek mesai verisi bulunamadı.';
-                personelInfoKarti.style.display = 'Bu kişiye ait görüntülenecek mesai verisi bulunamadı.';
-                anaGrafikAlani.style.display = 'Bu kişiye ait görüntülenecek mesai verisi bulunamadı.';
+                gunlukDetayKutusu.innerHTML = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!';
+                personelInfoKarti.style.display = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!';
+                anaGrafikAlani.style.display = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!';
                 return;
             }
 
@@ -676,15 +613,16 @@ function kisiSecildi(userId, adSoyad, clickedListItem) {
             console.error('Mesai detayı alınırken hata:', error);
             gunlukDetayKutusu.innerHTML = 'Mesai verileri yüklenirken bir hata oluştu.';
         });
-
+    raporKartlariContainer.classList.add('compact-view');
+    toggleSizeIcon.innerHTML = expandIcon;
+    toggleSizeLabel.textContent = "Görünümü Büyüt";
     kisiDetayBaslik.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
 }
 
 /**
- * Verilen verilere göre bar grafiğini oluşturur veya günceller.
- * @param {Object} barData - İşlenmiş bar grafik verileri.
- * @param {Array} apiData - Tıklama olayı için orijinal API verisi.
+ * @param {Object} barData
+ * @param {Array} apiData 
  */
 function createBarChart(barData, apiData) {
     const ctx = document.getElementById('mesaiChart').getContext('2d');
@@ -720,9 +658,9 @@ function createBarChart(barData, apiData) {
                         }
                     }
                 },
-                // === YENİ EKLENEN BÖLÜM: Sadece bu grafik için etiketleri kapat ===
+      
                 datalabels: {
-                    display: false // Bu satır, bu grafikte etiketlerin görünmesini engeller.
+                    display: false
                 }
             },
             onClick: (event, elements) => {
@@ -761,16 +699,16 @@ function createDoughnutChart(donutData) {
                     display: true,
                     text: 'Mesai Durum Dağılımı'
                 },
-                // === YENİ EKLENEN BÖLÜM: DATALABELS AYARLARI ===
+              
                 datalabels: {
-                    // Formatter fonksiyonu, her bir dilim için ne yazılacağını belirler
+                   
                     formatter: (value, context) => {
-                        if (total === 0) return '0%'; // Eğer hiç veri yoksa 0% göster
-                        // Yüzdeyi hesapla (Örn: (10 / 20 * 100) = 50.0%)
+                        if (total === 0) return '0%'; 
+                       
                         const percentage = (value / total * 100).toFixed(1) + '%';
                         return percentage;
                     },
-                    color: '#ffffff', // Yüzde yazısının rengi
+                    color: '#ffffff', 
                     font: {
                         weight: 'bold',
                         size: 14,
@@ -780,6 +718,64 @@ function createDoughnutChart(donutData) {
         }
     });
 
+}
 
 
+
+function toggleCardSize() {
+
+    raporKartlariContainer.classList.toggle('compact-view');
+    if (raporKartlariContainer.classList.contains('compact-view')) {
+        toggleSizeIcon.innerHTML = expandIcon;
+        toggleSizeLabel.textContent = "Görünümü Büyüt";
+    } else {
+        toggleSizeIcon.innerHTML = compressIcon;
+        toggleSizeLabel.textContent = "Görünümü Küçült";
+    }
+}
+
+
+toggleSizeBtn.addEventListener('click', toggleCardSize);
+
+toggleSizeIcon.innerHTML = compressIcon;
+toggleSizeLabel.textContent = "Görünümü Küçült";
+
+
+
+
+
+const infoModal = document.getElementById('info-modal');
+const modalBody = document.getElementById('modal-body-content');
+const photoLightbox = document.getElementById('photo-lightbox');
+const lightboxImage = document.getElementById('lightbox-image');
+
+personelInfoKarti.addEventListener('click', () => {
+    const contentToCopy = personelInfoIcerik.innerHTML;
+    if (contentToCopy && !contentToCopy.includes('<i>')) {
+        modalBody.innerHTML = contentToCopy;
+        openModal(infoModal);
+    }
+});
+
+
+
+document.querySelectorAll('[data-close-modal]').forEach(item => {
+    item.addEventListener('click', () => {
+        closeAllModals();
+    });
+});
+
+
+function openModal(modal) {
+    if (!modal) return;
+    modal.classList.add('is-visible');
+    document.body.classList.add('modal-open');
+}
+
+
+function closeAllModals() {
+    document.querySelectorAll('.modal.is-visible').forEach(modal => {
+        modal.classList.remove('is-visible');
+    });
+    document.body.classList.remove('modal-open');
 }

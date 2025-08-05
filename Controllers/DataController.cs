@@ -36,11 +36,7 @@ namespace WebApplication1.Controllers
         [HttpGet("getinfo/{userId}")]
         public IActionResult Getinfo(int userId)
         {
-
-
-
-
-            var result = new List<object>();
+              var result = new List<object>();
 
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
@@ -48,7 +44,7 @@ namespace WebApplication1.Controllers
 
                 // Sadece istenen personeli getirmesi için WHERE şartı eklendi
                 string query = @"
-           SELECT* from Sicil where CAST(Sicil.UserID AS INT) = @userıd
+           SELECT s.* , P.fotoimage from Sicil s, SicilFoto P where CAST(S.UserID AS INT) = @userId  and s.ID = P.sicilid
         ";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -60,6 +56,14 @@ namespace WebApplication1.Controllers
                     {
                         while (reader.Read())
                         {
+
+                            string fotoBase64 = null;
+                            if (reader["fotoimage"] != DBNull.Value)
+                            {
+                                byte[] fotoBytes = (byte[])reader["fotoimage"];
+                                fotoBase64 = Convert.ToBase64String(fotoBytes);
+                            }
+
                             result.Add(new
                             {
                                 UserID = reader["UserID"],
@@ -68,7 +72,8 @@ namespace WebApplication1.Controllers
                                 PersonleNo = reader["PersonelNo"],
                                 Giris = reader["GirisTarih"],
                                 Dogum = reader["DogumTarih"],
-                                Tel = reader["CepTelefon"]
+                                Tel = reader["CepTelefon"],
+                                foto = fotoBase64
                             });
                         }
                     }
@@ -141,6 +146,12 @@ HAVING
             return Ok(result);
         }
 
+
+        //=================================
+        // userıd si girilen çalışanın tüm mesai verilerini çeken api
+        // burdaki sql sorgusu daha sonra database e  PROCODURE olarak eklenebilir
+        //=================================
+
         [HttpGet("mesai/{userId}")]
         public IActionResult GetPersonelMesai(int userId)
         {
@@ -149,58 +160,42 @@ HAVING
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-
-                // Sadece istenen personeli getirmesi için WHERE şartı eklendi
                 string query = @"
-SELECT
-    S.UserID,
-    S.Ad,
-    S.Soyad,
-    B.Ad AS 'departman',
-    CONVERT(date, P.EventTime) AS Tarih,
-    
-    -- DÜZELTME: Sadece o günkü en erken saat alınıyor
-    MIN(P.EventTime) AS IlkGiris,
-    
-    -- DÜZELTME: Sadece o günkü en geç saat alınıyor
-    MAX(P.EventTime) AS SonCikis,
-    
-    -- DÜZELTME: DATEDIFF de basit MIN/MAX kullanacak şekilde güncellendi
-    DATEDIFF(MINUTE,
-        MIN(P.EventTime),
-        MAX(P.EventTime)
-    ) AS ToplamMesaiDakika
-FROM
-    Pool P
-JOIN
-    Sicil S ON CAST(P.UserID AS INT) = S.UserID
-LEFT JOIN
-    cbo_bolum B ON S.Bolum = B.ID
-
-WHERE
-    S.UserID = @userId -- Kullanıcı filtresi korunuyor
-GROUP BY
-    S.UserID, S.Ad, S.Soyad, B.Ad, CONVERT(date, P.EventTime)
-
-HAVING
-    MIN(P.EventTime) < MAX(P.EventTime);
-
-        ";
+                    SELECT
+                        S.UserID,
+                        S.Ad,
+                        S.Soyad,
+                        B.Ad AS 'departman',
+                            CONVERT(date, P.EventTime) AS Tarih,
+                            MIN(P.EventTime) AS IlkGiris,
+                            MAX(P.EventTime) AS SonCikis,
+                           DATEDIFF(MINUTE,
+                                MIN(P.EventTime),
+                                MAX(P.EventTime)
+                                    ) AS ToplamMesaiDakika
+                    FROM
+                        Pool P
+                    JOIN
+                        Sicil S ON CAST(P.UserID AS INT) = S.UserID
+                    LEFT JOIN
+                        cbo_bolum B ON S.Bolum = B.ID
+                    WHERE
+                        S.UserID = @userId -- Kullanıcı filtresi korunuyor
+                    GROUP BY
+                        S.UserID, S.Ad, S.Soyad, B.Ad, CONVERT(date, P.EventTime)
+                    HAVING
+                        MIN(P.EventTime) < MAX(P.EventTime);";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
-                    // Bu parametre artık WHERE şartı tarafından kullanılacak
+              
                     cmd.Parameters.AddWithValue("@UserId", userId);
-
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
                             result.Add(new
-                            {
-                                // UserID, Ad, Soyad gibi bilgileri artık tekrar eklemeye gerek yok
-                                // çünkü bu bilgiler başlıkta ve detay kutusunda zaten var.
-                                // Sadece grafiğin ihtiyaç duyduğu verileri yollamak daha verimli.
+                            {                   
                                 Tarih = reader["Tarih"],
                                 IlkGiris = reader["IlkGiris"],
                                 SonCikis = reader["SonCikis"],
@@ -216,48 +211,45 @@ HAVING
         }
 
 
+        //=================================
+        // Personel listesi ni çeken api , personlellerin ad,soyad,departman, ve foto bilgisini getiriyor
+        // burdaki sql sorgusu daha sonra database e  PROCODURE olarak eklenebilir
+        //=================================
+
         [HttpGet("personeller")]
         public IActionResult GetPersoneller()
         {
             var result = new List<object>();
-
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-
-                // DÜZELTME: Tekrarları önlemek ve performansı artırmak için sorgu WHERE EXISTS ile yeniden yazıldı.
-                // DataController.cs -> GetPersoneller metodundaki query değişkeni
-
                 string query = @"
-    -- 1. Adım: Her personele ait fotoğrafları numaralandırıp sadece ilkini seçeceğimiz bir CTE oluşturuyoruz.
-  WITH SinglePhoto AS (
-    SELECT
-        sicilid,
-        fotoimage,
-        ROW_NUMBER() OVER(PARTITION BY sicilid ORDER BY sicilid) AS rn
-    FROM
-        SicilFoto
-)
-SELECT
-    S.UserID,
-    S.Ad,
-    S.Soyad,
-    B.Ad AS departman,
-    SP.fotoimage AS FotoData
-FROM
-    Sicil S
-LEFT JOIN
-    cbo_bolum B ON S.Bolum = B.ID
-LEFT JOIN
-    SinglePhoto SP ON S.ID = SP.sicilid AND SP.rn = 1;
-
-";
+                  -- 1. Adım: Her personele ait fotoğrafları numaralandırıp sadece ilkini seçeceğimiz bir CTE oluşturuyoruz.
+                    WITH SinglePhoto AS (
+                    SELECT
+                        sicilid,
+                        fotoimage,
+                            ROW_NUMBER() OVER(PARTITION BY sicilid ORDER BY sicilid) AS rn
+                    FROM
+                        SicilFoto
+                            )
+                        SELECT
+                            S.UserID,
+                            S.Ad,
+                            S.Soyad,
+                            B.Ad AS departman,
+                            SP.fotoimage AS FotoData
+                        FROM
+                            Sicil S
+                        LEFT JOIN
+                            cbo_bolum B ON S.Bolum = B.ID
+                        LEFT JOIN
+                            SinglePhoto SP ON S.ID = SP.sicilid AND SP.rn = 1;";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        // ... (Geri kalan C# kodunuzda bir değişiklik yapmanıza gerek yok) ...
                         string ad = reader["Ad"] == DBNull.Value ? null : reader["Ad"].ToString();
                         string soyad = reader["Soyad"] == DBNull.Value ? null : reader["Soyad"].ToString();
                         string departman = reader["departman"] == DBNull.Value ? null : reader["departman"].ToString();
@@ -292,8 +284,6 @@ LEFT JOIN
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-
-                // DÜZELTME: Sorgu, TerminalID'ye bakmadan, sadece en erken ve en geç saate bakacak şekilde basitleştirildi.
                 string query = @"
             SELECT
                 S.UserID,
@@ -317,10 +307,8 @@ LEFT JOIN
             WHERE CONVERT(date, P.EventTime) = @Tarih
             GROUP BY S.UserID, S.Ad, S.Soyad, B.Ad, CONVERT(date, P.EventTime)
             -- HAVING şartı, gün içinde en az iki farklı hareket olmasını sağlar
-            HAVING MIN(P.EventTime) < MAX(P.EventTime);
-        ";
-
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+            HAVING MIN(P.EventTime) < MAX(P.EventTime);  ";
+               using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@Tarih", sorguTarihi.Date);
 
@@ -346,6 +334,13 @@ LEFT JOIN
         }
 
 
+        //=================================
+        // Verilen aralıktaki , geç gelen,erken gelen, geç çıkan, personlleri seçen ve bu personlleri departmanına göre de gruplandıran api sorgusu
+        // burdaki sql sorgusu daha sonra database e  PROCODURE olarak eklenebilir
+        //=================================
+
+
+
         [HttpGet("aralik-raporu")]
         public IActionResult GetAralikRaporu([FromQuery] DateTime baslangic, [FromQuery] DateTime bitis)
         {
@@ -357,7 +352,6 @@ LEFT JOIN
             {
                 conn.Open();
 
-                // DÜZELTME: Sorgunun temelindeki #GunlukMesai tablosu, artık TerminalID'ye bakmayacak şekilde basitleştirildi.
                 string query = @"
             IF OBJECT_ID('tempdb..#GunlukMesai') IS NOT NULL
                 DROP TABLE #GunlukMesai;
@@ -424,7 +418,7 @@ LEFT JOIN
 
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        // 1. Sonuç Seti: Personel Özetleri
+
                         while (reader.Read())
                         {
                             personelOzetleri.Add(new
@@ -440,7 +434,6 @@ LEFT JOIN
                             });
                         }
 
-                        // 2. Sonuç Setine Geç
                         if (reader.NextResult())
                         {
                             while (reader.Read())
@@ -456,7 +449,7 @@ LEFT JOIN
                             }
                         }
 
-                        // 3. Sonuç Setine Geç
+               
                         if (reader.NextResult())
                         {
                             while (reader.Read())
@@ -484,12 +477,10 @@ LEFT JOIN
             return Ok(finalResult);
         }
 
-
-
-
-
-
-        // DataController.cs dosyanıza bu yeni metodu ekleyin
+        //=================================
+        // aralık-raporu api nda çıkan outputların detaylı bilgisini veren kısımi listele butonuna tıklandığında çalışacak sorgu
+        // burdaki sql sorgusu daha sonra database e  PROCODURE olarak eklenebilir
+        //=================================
 
         [HttpGet("aralik-detaylari")]
         public IActionResult GetAralikDetaylari([FromQuery] DateTime baslangic, [FromQuery] DateTime bitis)
@@ -497,9 +488,7 @@ LEFT JOIN
             var result = new List<object>();
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
-                conn.Open();
-
-                // DÜZELTME: Sorgu, TerminalID'ye bakmadan, sadece en erken ve en geç saate bakacak şekilde basitleştirildi.
+                conn.Open();       
                 string query = @"
             SELECT
                 S.UserID,

@@ -1,10 +1,12 @@
 wwwroot\assets\download.jpg
+wwwroot\assets\icons.svg
 wwwroot\assets\images.jpg
 wwwroot\assets\images1.jpg
 wwwroot\assets\OTC-logo.jpg
 wwwroot\assets\tp-otc.png
-wwwroot\index.html
-wwwroot\js\rapor.js
-wwwroot\js\script.js
-wwwroot\rapor.html
 wwwroot\css\style.css
+wwwroot\index.html
+wwwroot\js\icons.js
+wwwroot\js\rapor.js
+wwwroot\rapor.html
+wwwroot\js\script.js
