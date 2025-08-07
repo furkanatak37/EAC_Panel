@@ -4,9 +4,9 @@ wwwroot\assets\images.jpg
 wwwroot\assets\images1.jpg
 wwwroot\assets\OTC-logo.jpg
 wwwroot\assets\tp-otc.png
-wwwroot\css\style.css
 wwwroot\index.html
 wwwroot\js\icons.js
 wwwroot\js\rapor.js
-wwwroot\rapor.html
 wwwroot\js\script.js
+wwwroot\rapor.html
+wwwroot\css\style.css

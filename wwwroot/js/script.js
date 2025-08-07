@@ -1,4 +1,4 @@
-﻿import { compressIcon, expandIcon } from './icons.js'; 
+﻿//import { compressIcon, expandIcon } from './icons.js'; 
 
 
 const personelInfoIcerik = document.getElementById('personel-info-icerik');
@@ -7,15 +7,19 @@ const personelListesi = document.getElementById('personelListesi');
 const adFiltreInput = document.getElementById('adFiltre');
 const departmanFiltreSelect = document.getElementById('departmanFiltre');
 const gununEnleriIcerik = document.getElementById('gunun-enleri-icerik');
+const izinlilerListesi = document.getElementById('izinliler-icerik');
+
 const gecGelenlerListesi = document.getElementById('gec-gelenler-listesi');
 const erkenCikanlarListesi = document.getElementById('erken-cikanlar-listesi');
+const gelmeyenlerListesi = document.getElementById('gelmeyenler-listesi');
 
 const departmanAnalizIcerik = document.getElementById('departman-analiz-icerik');
 const fazlaMesaiListesi = document.getElementById('fazla-mesai-listesi');
 const baslangicTarihInput = document.getElementById('baslangicTarih');
 const bitisTarihInput = document.getElementById('bitisTarih');
+ const compressIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-dash-lg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M2 8a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 8z"/></svg>`;
 
-
+const expandIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>`;
 
 
 //rapor kartlarının boyut butonları
@@ -28,13 +32,14 @@ const raporKartlariContainer = document.querySelector('.rapor-kartlari');
 //event listener lar
 document.addEventListener('DOMContentLoaded', initializePage);
 adFiltreInput.addEventListener('input', applyFilters);
-gunSeciciSelect.addEventListener('change', handleGunSeciciChange);
 departmanFiltreSelect.addEventListener('change', applyFilters);
-raporOlusturBtn.addEventListener('click', guncelleAralikRaporlari);
 
 
 //buton tanımlamaları
 const gecGelenlerDetayBtn = document.getElementById('gec-gelenler-detay-btn');
+
+const gelmeyenlerDetayBtn = document.getElementById('gelmeyenler-detay-btn');
+
 const fazlaMesaiDetayBtn = document.getElementById('fazla-mesai-detay-btn');
 const raporOlusturBtn = document.getElementById('raporOlusturBtn');
 const departmanDetayBtn = document.getElementById('departman-detay-btn');
@@ -168,6 +173,9 @@ function setInitialReportState() {
     const initialMessage = 'Raporu görüntülemek için lütfen bir tarih seçin.';
     gecGelenlerListesi.innerHTML = `<li>${initialMessage}</li>`;
     erkenCikanlarListesi.innerHTML = `<li>${initialMessage}</li>`;
+    gelmeyenlerListesi.innerHTML = `<li>${initialMessage}</li>`;
+
+    izinlilerListesi.innerHTML = `<p>${initialMessage}</p>`;
 
     gununEnleriIcerik.innerHTML = `<p>${initialMessage}</p>`;
     departmanAnalizIcerik.innerHTML = `<p>${initialMessage}</p>`;
@@ -206,12 +214,18 @@ async function guncelleAralikRaporlari() {
     fazlaMesaiDetayBtn.href = `rapor.html?rapor=mesai&baslangic=${baslangic}&bitis=${bitis}`;
     departmanDetayBtn.href = `rapor.html?rapor=departman&baslangic=${baslangic}&bitis=${bitis}`;
     erkenCikanlarDetayBtn.href = `rapor.html?rapor=erken&baslangic=${baslangic}&bitis=${bitis}`;
+    gelmeyenlerDetayBtn.href = `rapor.html?rapor=gelmeyenler&baslangic=${baslangic}&bitis=${bitis}`
 
 
     gecGelenlerListesi.innerHTML = '<li>Yükleniyor...</li>';
+
+    gelmeyenlerListesi.innerHTML = '<li>Yükleniyor...</li>';
+
     erkenCikanlarListesi.innerHTML = '<li>Yükleniyor...</li>';
     fazlaMesaiListesi.innerHTML = '<li>Yükleniyor...</li>';
     gununEnleriIcerik.innerHTML = '<p>Yükleniyor...</p>';
+    izinlilerListesi.innerHTML = '<p>Yükleniyor...</p>';
+
     departmanAnalizIcerik.innerHTML = '<p>Yükleniyor...</p>';
 
     try {
@@ -226,14 +240,34 @@ async function guncelleAralikRaporlari() {
         renderAraliginEnleri(data.araliginEnleri);
         renderDepartmanAnaliziAralik(data.departmanOzetleri || []);
 
+
+        const response2 = await fetch(`/api/data/getGelmeyenler?baslangic=${baslangic}&bitis=${bitis}`);
+        if (!response2.ok) throw new Error(`API Hatası: ${response2.status}`);
+        const data2 = await response2.json();
+
+
+        renderGelmeyenler(data2 || [])
+
+
+        const response3 = await fetch(`/api/data/getIzinliler?baslangic=${baslangic}&bitis=${bitis}`);
+        if (!response3.ok) throw new Error(`API Hatası: ${response3.status}`);
+        const data3 = await response3.json();
+
+
+        renderIzinliler(data3 || [])
+
+
     } catch (error) {
         console.error("Aralık raporu alınırken hata:", error);
         const errorMessage = '<li>Rapor alınamadı.</li>';
         gecGelenlerListesi.innerHTML = errorMessage;
         erkenCikanlarListesi.innerHTML = errorMessage;
+        gelmeyenlerListesi.innerHTML = errorMessage;
 
         fazlaMesaiListesi.innerHTML = errorMessage;
         gununEnleriIcerik.innerHTML = '<p>Hata!</p>';
+        izinlilerListesi.innerHTML = '<p>Hata!</p>';
+
         departmanAnalizIcerik.innerHTML = '<p>Hata!</p>';
     }
 
@@ -255,6 +289,32 @@ function renderGecKalanlarAralik(personelOzetleri) {
         gecGelenlerListesi.appendChild(li);
     });
 }
+
+
+/**
+ * Gelen özet verisine göre "Devamsızlar" kartını doldurur.
+ */
+function renderGelmeyenler(devamsizlar) {
+    gelmeyenlerListesi.innerHTML = '';
+    if (!devamsizlar || devamsizlar.length === 0) {
+        gelmeyenlerListesi.innerHTML = '<li>Bu aralıkta devamsızlık yapan personel bulunamadı.</li>';
+        return;
+    }
+
+    devamsizlar.sort((a, b) => (b.devamsizlikGunSayisi || b.devamsizlikGunSayisi) - (a.devamsizlikGunSayisi || a.devamsizlikGunSayisi));
+
+    devamsizlar.forEach(p => {
+        const li = document.createElement('li');
+        const gunSayisi = p.devamsizlikGunSayisi || p.DevamsizlikGunSayisi;
+        const adSoyad = `${p.Ad || p.ad} ${p.Soyad || p.soyad}`;
+        li.textContent = `
+            ${adSoyad}  (${gunSayisi} kez) 
+        `;
+
+        gelmeyenlerListesi.appendChild(li);
+    });
+}
+
 
 function renderErkenCikanlarAralik(personelOzetleri) {
 
@@ -331,6 +391,59 @@ function renderAraliginEnleri(enlerData) {
 }
 
 
+
+/**
+ * Gelen veriye göre "İzinli Personel" kartını doldurur.
+ * @param {Array} izinlilerData - API'den gelen izinli personel listesi.
+ */
+function renderIzinliler(izinlilerData) {
+    izinlilerListesi.innerHTML = ''; // Önceki listeyi temizle
+
+    if (!izinlilerData || izinlilerData.length === 0) {
+        // Liste boşsa bilgilendirme mesajı göster
+        izinlilerListesi.innerHTML = '<p class="kart-placeholder">Bu aralıkta izinli personel bulunamadı.</p>';
+        return;
+    }
+
+    // Performans için bir fragment oluşturalım
+    const fragment = document.createDocumentFragment();
+
+    izinlilerData.forEach(izin => {
+        // Her bir izin kaydı için bir div oluştur
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'izinli-kisi-item';
+
+        const adSoyad = `${izin.ad || izin.Ad} ${izin.soyad || izin.Soyad}`;
+        const departman = izin.departman || izin.Departman || 'N/A';
+
+        // Tarihleri formatla (örn: 05 Ağu - 10 Ağu 2025)
+        const baslangicTarihi = new Date(izin.izinBaslangic || izin.IzinBaslangic).toLocaleDateString('tr-TR', {
+            day: '2-digit', month: 'short'
+        });
+        const bitisTarihi = new Date(izin.izinBitis || izin.IzinBitis).toLocaleDateString('tr-TR', {
+            day: '2-digit', month: 'short', year: 'numeric'
+        });
+
+        // Div'in iç HTML'ini oluştur
+        itemDiv.innerHTML = `
+            <div class="izinli-personel-bilgi">
+                <span class="izinli-isim">${adSoyad}</span>
+                <span class="izinli-departman">${departman}</span>
+            </div>
+            <div class="izinli-tarih-araligi">
+                ${baslangicTarihi} - ${bitisTarihi}
+            </div>
+        `;
+
+        fragment.appendChild(itemDiv);
+    });
+
+    // Oluşturulan tüm elemanları tek seferde DOM'a ekle
+    izinlilerListesi.appendChild(fragment);
+}
+
+
+
 function renderDepartmanAnaliziAralik(departmanOzetleri) {
     departmanAnalizIcerik.innerHTML = '';
     if (departmanOzetleri.length === 0) {
@@ -362,8 +475,9 @@ function applyFilters() {
     }
     renderPersonnelList(filteredList);
 }
+raporOlusturBtn.addEventListener('click', guncelleAralikRaporlari);
 
-
+gunSeciciSelect.addEventListener('change', handleGunSeciciChange);
 function renderPersonnelList(personnel) {
     personelListesi.innerHTML = ''; 
 

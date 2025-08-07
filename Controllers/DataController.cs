@@ -36,7 +36,7 @@ namespace WebApplication1.Controllers
         [HttpGet("getinfo/{userId}")]
         public IActionResult Getinfo(int userId)
         {
-              var result = new List<object>();
+            var result = new List<object>();
 
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
@@ -188,14 +188,14 @@ HAVING
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
-              
+
                     cmd.Parameters.AddWithValue("@UserId", userId);
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
                             result.Add(new
-                            {                   
+                            {
                                 Tarih = reader["Tarih"],
                                 IlkGiris = reader["IlkGiris"],
                                 SonCikis = reader["SonCikis"],
@@ -308,7 +308,7 @@ HAVING
             GROUP BY S.UserID, S.Ad, S.Soyad, B.Ad, CONVERT(date, P.EventTime)
             -- HAVING şartı, gün içinde en az iki farklı hareket olmasını sağlar
             HAVING MIN(P.EventTime) < MAX(P.EventTime);  ";
-               using (SqlCommand cmd = new SqlCommand(query, conn))
+                using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@Tarih", sorguTarihi.Date);
 
@@ -409,6 +409,7 @@ HAVING
                 CONVERT(time, DATEADD(ms, AVG(CAST(DATEDIFF(ms, '00:00:00', CONVERT(time, SonCikis)) AS BIGINT)), '00:00:00')) AS OrtalamaCikis
             FROM #GunlukMesai
             GROUP BY departman;
+
         ";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -449,7 +450,7 @@ HAVING
                             }
                         }
 
-               
+
                         if (reader.NextResult())
                         {
                             while (reader.Read())
@@ -488,7 +489,7 @@ HAVING
             var result = new List<object>();
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
-                conn.Open();       
+                conn.Open();
                 string query = @"
             SELECT
                 S.UserID,
@@ -539,8 +540,264 @@ HAVING
             return Ok(result);
         }
 
+
+
+
+
+
+        [HttpGet("getGelmeyenler")]
+        public IActionResult GetGelmeyenler([FromQuery] DateTime baslangic, [FromQuery] DateTime bitis)
+        {
+            var result = new List<object>();
+
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+
+                // DÜZELTME: Sorgunun son adımı, devamsızlıkları gün sayısına göre özetleyecek şekilde güncellendi.
+                string query = @"
+            IF @Baslangic < '2024-01-01'
+              BEGIN 
+            -- 1. ADIM: Tarih aralığındaki günleri üreten takvim.
+                   WITH Takvim AS (
+                SELECT CAST(@Baslangic AS DATE) AS Tarih
+                UNION ALL
+                SELECT DATEADD(day, 1, Tarih)
+                FROM Takvim
+                WHERE Tarih < @Bitis
+            ),
+
+            -- 2. ADIM: O gün kimlerin işe geldiğini bulalım.
+            GelenPersoneller AS (
+                SELECT DISTINCT
+                    CONVERT(date, P.EventTime) AS Tarih,
+                    CAST(P.SicilID AS INT) AS UserID
+                FROM Pool P
+                WHERE CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
+            ),
+
+            -- 3. ADIM: O gün çalışması gereken personeli ve iletişim bilgilerini bulalım.
+            BeklenenGelisler AS (
+                SELECT
+                    T.Tarih,
+                    S.UserID, S.Ad, S.Soyad, B.Ad AS departman,
+                    S.EMail, S.CepTelefon AS CepTelefon
+                FROM Takvim T
+                CROSS JOIN Sicil S
+                LEFT JOIN cbo_bolum B ON S.Bolum = B.ID
+                WHERE
+                    DATENAME(weekday, T.Tarih) NOT IN ('Saturday', 'Sunday', 'Cumartesi', 'Pazar')
+                    AND T.Tarih >= CONVERT(date, S.GirisTarih)
+                    AND (S.CikisTarih IS NULL OR T.Tarih <= CONVERT(date, S.CikisTarih))
+            )
+
+            -- 4. ADIM: Devamsızları bulup, kişi bazında devamsızlık yaptıkları GÜN SAYISINI toplayalım.
+            SELECT
+                BG.UserID, BG.Ad, BG.Soyad, BG.departman,
+                BG.EMail, BG.CepTelefon,
+                COUNT(BG.Tarih) AS DevamsizlikGunSayisi -- Devamsızlık yapılan günleri sayıyoruz
+            FROM BeklenenGelisler BG
+            LEFT JOIN GelenPersoneller GP ON BG.UserID = GP.UserID AND BG.Tarih = GP.Tarih
+            WHERE GP.UserID IS NULL
+            GROUP BY -- Sonuçları kişiye göre grupluyoruz
+                BG.UserID, BG.Ad, BG.Soyad, BG.departman, BG.EMail, BG.CepTelefon
+            ORDER BY
+                DevamsizlikGunSayisi DESC
+            OPTION (MAXRECURSION 0);
+
+        END
+        ";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Baslangic", baslangic.Date);
+                    cmd.Parameters.AddWithValue("@Bitis", bitis.Date);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            result.Add(new
+                            {
+                                UserID = reader["UserID"],
+                                Ad = reader["Ad"],
+                                Soyad = reader["Soyad"],
+                                Departman = reader["departman"],
+                                tel = reader["CepTelefon"],
+                                Email = reader["EMail"],
+                                devamsizlikGunSayisi = reader["DevamsizlikGunSayisi"] // YENİ
+                            });
+                        }
+                    }
+                }
+            }
+            return Ok(result);
+        }
+
+
+
+
+
+
+        [HttpGet("getIzinliler")]
+        public IActionResult GetIzinliler([FromQuery] DateTime baslangic, [FromQuery] DateTime bitis)
+        {
+            var result = new List<object>();
+
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+
+                // Izinler tablosundan, belirtilen tarih aralığıyla kesişen kayıtları getiren sorgu.
+                string query = @"
+            SELECT
+                S.ID,
+                S.Ad,
+                S.Soyad,
+                B.Ad AS departman,
+                S.EMail,
+                S.CepTelefon AS CepTelefon,
+                I.BasTarih,
+                I.BitTarih
+                -- I.IzinTuru -- Eğer izin türünü tutan bir kolonunuz varsa bunu da ekleyebilirsiniz
+            FROM
+                Izinler I
+            JOIN
+                Sicil S ON I.SicilID = S.ID -- JOIN için doğru kolon adını kullandığınızdan emin olun
+            LEFT JOIN
+                cbo_bolum B ON S.Bolum = B.ID
+            WHERE
+                -- İzin başlangıcı, rapor bitişinden ÖNCE mi?
+                CONVERT(date, I.BasTarih) <= @Bitis 
+                AND 
+                -- İzin bitişi, rapor başlangıcından SONRA mı?
+                CONVERT(date, I.BitTarih) >= @Baslangic
+            ORDER BY
+                I.BasTarih, S.Ad;
+        ";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Baslangic", baslangic.Date);
+                    cmd.Parameters.AddWithValue("@Bitis", bitis.Date);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            result.Add(new
+                            {
+                                UserID = reader["ID"],
+                                Ad = reader["Ad"],
+                                Soyad = reader["Soyad"],
+                                Departman = reader["departman"],
+                                tel = reader["CepTelefon"],
+                                Email = reader["EMail"],
+                                // DÜZELTME: 'Tarih' yerine iznin başlangıç ve bitiş tarihlerini döndürüyoruz.
+                                IzinBaslangic = reader["BasTarih"],
+                                IzinBitis = reader["BitTarih"]
+                            });
+                        }
+                    }
+                }
+            }
+            return Ok(result);
+        }
+
+
+
+
+
+
+        // DataController.cs dosyanıza bu yeni metodu ekleyin
+
+        [HttpGet("getGelmeyenlerDetay")]
+        public IActionResult GetGelmeyenlerDetay([FromQuery] DateTime baslangic, [FromQuery] DateTime bitis)
+        {
+            var result = new List<object>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+
+                // DÜZELTME: Bu sorgu, devamsızlıkları özetlemek yerine gün bazında detaylı listeler.
+                string query = @"
+            -- 1. ADIM: Tarih aralığındaki günleri üreten takvim.
+            WITH Takvim AS (
+                SELECT CAST(@Baslangic AS DATE) AS Tarih
+                UNION ALL
+                SELECT DATEADD(day, 1, Tarih)
+                FROM Takvim
+                WHERE Tarih < @Bitis
+            ),
+
+            -- 2. ADIM: O gün kimlerin işe geldiğini bulalım.
+            GelenPersoneller AS (
+                SELECT DISTINCT
+                    CONVERT(date, P.EventTime) AS Tarih,
+                    CAST(P.SicilID AS INT) AS UserID
+                FROM Pool P
+                WHERE CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
+            ),
+
+            -- 3. ADIM: O gün çalışması gereken personeli ve iletişim bilgilerini bulalım.
+            BeklenenGelisler AS (
+                SELECT
+                    T.Tarih,
+                    S.UserID, S.Ad, S.Soyad, B.Ad AS departman,
+                    S.EMail, S.CepTelefon AS CepTelefon
+                FROM Takvim T
+                CROSS JOIN Sicil S
+                LEFT JOIN cbo_bolum B ON S.Bolum = B.ID
+                WHERE
+                    DATENAME(weekday, T.Tarih) NOT IN ('Saturday', 'Sunday', 'Cumartesi', 'Pazar')
+                    AND T.Tarih >= CONVERT(date, S.GirisTarih)
+                    AND (S.CikisTarih IS NULL OR T.Tarih <= CONVERT(date, S.CikisTarih))
+            )
+
+            -- 4. ADIM: Gelmesi beklenenlerden gelenleri çıkararak devamsızlıkların GÜNLÜK DÖKÜMÜNÜ listeleyelim.
+            SELECT
+                BG.Tarih, BG.UserID, BG.Ad, BG.Soyad, BG.departman,
+                BG.EMail, BG.CepTelefon
+            FROM BeklenenGelisler BG
+            LEFT JOIN GelenPersoneller GP ON BG.UserID = GP.UserID AND BG.Tarih = GP.Tarih
+            WHERE GP.UserID IS NULL -- Devamsızlık filtresi
+            ORDER BY BG.Tarih, BG.Ad
+            OPTION (MAXRECURSION 0);
+        ";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Baslangic", baslangic.Date);
+                    cmd.Parameters.AddWithValue("@Bitis", bitis.Date);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            result.Add(new
+                            {
+                                UserID = reader["UserID"],
+                                Ad = reader["Ad"],
+                                Soyad = reader["Soyad"],
+                                Departman = reader["departman"],
+                                Tarih = reader["Tarih"], // Artık her satırda tarih bilgisi var
+                                tel = reader["CepTelefon"],
+                                Email = reader["EMail"]
+                            });
+                        }
+                    }
+                }
+            }
+            return Ok(result);
+        }
+
+
+
+
+
+
+
     }
 
 
 
-}
+
+
+    }

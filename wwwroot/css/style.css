@@ -273,6 +273,14 @@ body {
     border-left-color: var(--info-color);
 }
 
+.izinli {
+    border-left-color: var(--info-color);
+}
+.gelmeyenler {
+    border-left-color: var(--info-color);
+}
+
+
 /* style.css dosyanızda bu kuralları güncelleyin */
 
 .charts-section {
@@ -963,6 +971,13 @@ body {
 .departman-analizi {
     border-left-color: var(--info-color);
 }
+.izinli {
+    border-left-color: var(--info-color);
+}
+.gelmeyenler {
+    border-left-color: var(--info-color);
+}
+
 
 /* --- Grafik Alanı --- */
 .charts-section {
@@ -1351,4 +1366,67 @@ body.modal-open {
     #donutChartContainer {
         flex-basis: 350px;
     }
+}
+
+
+
+/* ==========================================================================
+   İzinliler Kartı Liste Stili
+   ========================================================================== */
+
+/* Her bir izinli personel satırı için ana sarmalayıcı */
+.izinli-kisi-item {
+    display: flex; /* İçerikleri yan yana hizalamak için */
+    justify-content: space-between; /* Öğeleri iki uca yaslar (isim sola, tarih sağa) */
+    align-items: center; /* Dikeyde ortalar */
+    padding: 12px 5px; /* Satırın iç boşluğu */
+    border-bottom: 1px solid #eef0f2; /* Satırları ayıran ince çizgi */
+}
+
+    /* Son satırın altındaki çizgiyi kaldır */
+    .izinli-kisi-item:last-child {
+        border-bottom: none;
+    }
+
+/* İsim ve departmanı gruplayan sol taraf */
+.izinli-personel-bilgi {
+    display: flex;
+    flex-direction: column; /* İsim ve departmanı alt alta sırala */
+    gap: 2px; /* Aralarında hafif bir boşluk bırak */
+}
+
+/* Personel ismi stili */
+.izinli-isim {
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: var(--dark-color);
+}
+
+/* Departman ismi stili (daha küçük ve soluk) */
+.izinli-departman {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* Tarih aralığı stili (sağ tarafta) */
+.izinli-tarih-araligi {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--success-color); /* Başarı/Onay rengi (Yeşil) */
+    background-color: rgba(25, 135, 84, 0.1); /* Yeşil rengin çok açık tonu */
+    padding: 5px 10px;
+    border-radius: 15px; /* Yuvarlak köşeli etiket görünümü */
+    white-space: nowrap; /* Tarihlerin alt satıra kaymasını engelle */
+    margin-left: 10px; /* Soldaki metinle arasına boşluk koy */
+}
+
+/* Liste boş olduğunda gösterilecek mesajın stili */
+.kart-placeholder {
+    display: flex;
+
+
+    height: 100%; /* Kartın içini dikeyde doldur */
+    padding: 20px;
+    color: #6c757d;
+    font-size: 0.9rem;
 }

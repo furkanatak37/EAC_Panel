@@ -43,6 +43,48 @@
   },
   {
     "ContainingType": "WebApplication1.Controllers.DataController",
+    "Method": "GetGelmeyenler",
+    "RelativePath": "api/Data/getGelmeyenler",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "baslangic",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      },
+      {
+        "Name": "bitis",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebApplication1.Controllers.DataController",
+    "Method": "GetGelmeyenlerDetay",
+    "RelativePath": "api/Data/getGelmeyenlerDetay",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "baslangic",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      },
+      {
+        "Name": "bitis",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebApplication1.Controllers.DataController",
     "Method": "Getinfo",
     "RelativePath": "api/Data/getinfo/{userId}",
     "HttpMethod": "GET",
@@ -53,6 +95,27 @@
         "Name": "userId",
         "Type": "System.Int32",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebApplication1.Controllers.DataController",
+    "Method": "GetIzinliler",
+    "RelativePath": "api/Data/getIzinliler",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "baslangic",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      },
+      {
+        "Name": "bitis",
+        "Type": "System.DateTime",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []

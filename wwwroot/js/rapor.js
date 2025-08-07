@@ -23,9 +23,14 @@
     }
 
     // Rapor türüne göre doğru API'yi çağır
-    const apiUrl = raporTuru === 'departman'
-        ? `/api/data/aralik-raporu?baslangic=${baslangic}&bitis=${bitis}`
-        : `/api/data/aralik-detaylari?baslangic=${baslangic}&bitis=${bitis}`;
+    let apiUrl;
+    if (raporTuru === 'departman') {
+        apiUrl = `/api/data/aralik-raporu?baslangic=${baslangic}&bitis=${bitis}`;
+    } else if (raporTuru === 'gelmeyenler') {
+        apiUrl = `/api/data/getGelmeyenlerDetay?baslangic=${baslangic}&bitis=${bitis}`;
+    } else {
+        apiUrl = `/api/data/aralik-detaylari?baslangic=${baslangic}&bitis=${bitis}`;
+    }
 
     fetch(apiUrl)
         .then(response => response.json())
@@ -36,7 +41,12 @@
                 renderFazlaMesaiRaporu(data, baslangic, bitis);
             } else if (raporTuru === 'departman') {
                 renderDepartmanRaporu(data.departmanOzetleri, baslangic, bitis);
-            } else if (raporTuru === 'erken') {
+            }
+            else if (raporTuru === 'gelmeyenler') { // YENİ: Devamsızlar durumu
+                renderDevamsizlikRaporu(data, baslangic, bitis);
+            }
+
+            else if (raporTuru === 'erken') {
                 renderErkenCikanlarRaporu(data, baslangic, bitis);
             } else {
                 throw new Error("Bilinmeyen rapor türü.");
@@ -47,6 +57,46 @@
             tabloGovdesi.innerHTML = '<tr><td colspan="5">Rapor oluşturulurken bir hata oluştu.</td></tr>';
         });
 });
+
+
+
+function renderDevamsizlikRaporu(data, baslangic, bitis) {
+    const formatliBaslangic = new Date(baslangic).toLocaleDateString('tr-TR');
+    const formatliBitis = new Date(bitis).toLocaleDateString('tr-TR');
+    document.getElementById('rapor-baslik').textContent = `Devamsızlık Raporu (${formatliBaslangic} - ${formatliBitis})`;
+
+    document.getElementById('rapor-tablo-baslik').innerHTML = `
+        <tr>
+            <th>Tarih</th>
+            <th>Ad Soyad</th>
+            <th>Departman</th>
+            <th>İletişim</th>
+        </tr>`;
+
+    const tabloGovdesi = document.getElementById('rapor-tablo-govdesi');
+    tabloGovdesi.innerHTML = '';
+
+    if (!data || data.length === 0) {
+        tabloGovdesi.innerHTML = '<tr><td colspan="4">Bu aralıkta devamsızlık yapan personel bulunamadı.</td></tr>';
+        return;
+    }
+
+    data.forEach(p => {
+        const tr = document.createElement('tr');
+        const email = p.email || p.Email;
+        const tel = p.tel || p.Tel;
+        let iletisimHtml = '';
+        // ... (iletişim ikonları oluşturma mantığı buraya eklenebilir) ...
+
+        tr.innerHTML = `
+            <td>${new Date(p.tarih || p.Tarih).toLocaleDateString('tr-TR')}</td>
+            <td>${p.ad || p.Ad} ${p.soyad || p.Soyad}</td>
+            <td>${p.departman || p.Departman || 'N/A'}</td>
+            <td>${iletisimHtml || 'N/A'}</td>
+        `;
+        tabloGovdesi.appendChild(tr);
+    });
+}
 
 function renderErkenCikanlarRaporu(data, baslangic, bitis) {
     const formatliBaslangic = new Date(baslangic).toLocaleDateString('tr-TR');

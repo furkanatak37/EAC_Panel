@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("pdks_proje")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8675a41f13ad600ddd3daf5350a2713b0ad61285")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b6eca2c4dddf7657cd4751bfae018e692100ed70")]
 [assembly: System.Reflection.AssemblyProductAttribute("pdks_proje")]
 [assembly: System.Reflection.AssemblyTitleAttribute("pdks_proje")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
