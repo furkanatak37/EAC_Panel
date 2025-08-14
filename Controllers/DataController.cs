@@ -12,7 +12,7 @@ namespace WebApplication1.Controllers
     [ApiController]
     public class DataController : ControllerBase
     {
-        private readonly string _connectionString = "Data Source=APP-ACCESS\\MEYER;Initial Catalog=TPANGEL15130TESTM5_Meyer;Integrated Security=True;Pooling=False;Connect Timeout=30;Trust Server Certificate=True;Application Name=vscode-mssql;Application Intent=ReadWrite;Command Timeout=30";
+        private readonly string _connectionString = "Data Source=srvpmeyerdb01\\MSSQL_MEYER;Initial Catalog=TPANGEL15130_Meyer;Integrated Security=True;Pooling=False;Connect Timeout=30;Trust Server Certificate=True;Application Name=vscode-mssql;Application Intent=ReadWrite;Command Timeout=30";
 
         [HttpGet("testconnection")]
         public async Task<IActionResult> TestConnection()
@@ -31,7 +31,88 @@ namespace WebApplication1.Controllers
             }
         }
 
+        [HttpGet("getinfoDetay/{userId}")]
+        public IActionResult GetinfoDetay(int userId)
+        {
+            var result = new List<object>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
 
+                // DÜZELTME: Sorgudaki JOIN şartı ve C# kodundaki anahtar adı düzeltildi.
+                string query = @"
+            WITH YetkiListesi AS (
+                SELECT 
+                    s1.UserID,
+                    STUFF(
+                        (
+                            SELECT DISTINCT ', ' + y.Aciklama
+                            FROM (
+                                SELECT CAST('<M>' + REPLACE(s1.yetkistr, ';', '</M><M>') + '</M>' AS XML) AS x
+                            ) AS a
+                            CROSS APPLY a.x.nodes('/M') AS Split(b)
+                            JOIN Yetki y ON y.ID = Split.b.value('.', 'int')
+                            WHERE s1.yetkistr IS NOT NULL AND Split.b.value('.', 'varchar(50)') <> ''
+                            FOR XML PATH(''), TYPE
+                        ).value('.', 'NVARCHAR(MAX)'), 1, 2, ''
+                    ) AS YetkiAciklamalari
+                FROM Sicil s1
+                WHERE s1.UserID = @userId
+            )
+            SELECT 
+                s.*, 
+                p.fotoimage, 
+                y.YetkiAciklamalari,
+                b.Ad AS Departman
+            FROM Sicil s
+            -- DÜZELTME 1: JOIN şartı, personel ID'si üzerinden olacak şekilde güncellendi.
+            LEFT JOIN SicilFoto p ON s.ID = p.sicilid 
+            LEFT JOIN YetkiListesi y ON s.UserID = y.UserID
+            LEFT JOIN cbo_bolum b ON s.Bolum = b.ID
+            WHERE s.UserID = @userId;
+        ";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@userId", userId);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            var personelData = new Dictionary<string, object>();
+                            for (int i = 0; i < reader.FieldCount; i++)
+                            {
+                                var colName = reader.GetName(i).ToLower();
+                                var colValue = reader.GetValue(i);
+
+                                var atlanacakKolonlar = new List<string> { "bolum", "firma", "pozisyon", "altfirma", "degistiren", "fotoimage", "yetkistr" };
+                                if (atlanacakKolonlar.Contains(colName))
+                                {
+                                    continue;
+                                }
+
+                                // Bu if bloğu artık gereksiz çünkü 'fotoimage' atlanacakKolonlar listesinde
+                                // Ancak Base64 dönüşümü için ayrı bir kontrol ekliyoruz.
+                                if (colValue != DBNull.Value)
+                                {
+                                    personelData[colName] = colValue;
+                                }
+                            }
+
+                            // DÜZELTME 2: Fotoğrafı ayrı olarak oku ve anahtarı küçük harfle ekle.
+                            if (reader["fotoimage"] != DBNull.Value)
+                            {
+                                byte[] fotoBytes = (byte[])reader["fotoimage"];
+                                personelData["fotobase64"] = Convert.ToBase64String(fotoBytes);
+                            }
+
+                            result.Add(personelData);
+                        }
+                    }
+                }
+            }
+            return Ok(result);
+        }
 
         [HttpGet("getinfo/{userId}")]
         public IActionResult Getinfo(int userId)
@@ -42,9 +123,19 @@ namespace WebApplication1.Controllers
             {
                 conn.Open();
 
-                // Sadece istenen personeli getirmesi için WHERE şartı eklendi
                 string query = @"
-           SELECT s.* , P.fotoimage from Sicil s, SicilFoto P where CAST(S.UserID AS INT) = @userId  and s.ID = P.sicilid
+          SELECT
+    s.*, -- Sicil tablosundaki tüm kolonları getirir
+    P.fotoimage, -- SicilFoto tablosundan fotoğrafı getirir
+    B.Ad AS Departman -- YENİ: cbo_bolum tablosundan departman adını getirir
+FROM
+    Sicil s
+LEFT JOIN
+    SicilFoto P ON s.ID = P.sicilid
+LEFT JOIN
+    cbo_bolum B ON s.Bolum = B.ID -- YENİ: Departman tablosunu ekliyoruz
+WHERE
+    CAST(S.UserID AS INT) = @userId;
         ";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -73,6 +164,10 @@ namespace WebApplication1.Controllers
                                 Giris = reader["GirisTarih"],
                                 Dogum = reader["DogumTarih"],
                                 Tel = reader["CepTelefon"],
+                                Email= reader["Email"],
+                                Departman = reader["Departman"],
+
+
                                 foto = fotoBase64
                             });
                         }
@@ -275,63 +370,9 @@ HAVING
             return Ok(result);
         }
 
-        [HttpGet("gunluk-ozet")]
-        public IActionResult GetGunlukOzet([FromQuery] DateTime? tarih)
-        {
-            DateTime sorguTarihi = tarih ?? DateTime.Today;
-            var result = new List<object>();
 
-            using (SqlConnection conn = new SqlConnection(_connectionString))
-            {
-                conn.Open();
-                string query = @"
-            SELECT
-                S.UserID,
-                S.Ad,
-                S.Soyad,
-                B.Ad as 'departman',
-                MIN(P.EventTime) AS IlkGiris, -- Sadece o günkü en erken saat
-                MAX(P.EventTime) AS SonCikis,  -- Sadece o günkü en geç saat
-                CASE
-                    WHEN MAX(P.EventTime) > DATEADD(minute, 30, DATEADD(hour, 17, CAST(CONVERT(date, P.EventTime) AS datetime)))
-                    THEN DATEDIFF(
-                        MINUTE,
-                        DATEADD(minute, 30, DATEADD(hour, 17, CAST(CONVERT(date, P.EventTime) AS datetime))),
-                        MAX(P.EventTime)
-                    )
-                    ELSE 0
-                END AS FazlaMesaiDakika
-            FROM Pool P
-            JOIN Sicil S ON CAST(P.UserID AS INT) = S.UserID
-            LEFT JOIN cbo_bolum B ON S.Bolum = B.ID
-            WHERE CONVERT(date, P.EventTime) = @Tarih
-            GROUP BY S.UserID, S.Ad, S.Soyad, B.Ad, CONVERT(date, P.EventTime)
-            -- HAVING şartı, gün içinde en az iki farklı hareket olmasını sağlar
-            HAVING MIN(P.EventTime) < MAX(P.EventTime);  ";
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@Tarih", sorguTarihi.Date);
 
-                    using (SqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            result.Add(new
-                            {
-                                UserID = reader["UserID"],
-                                Ad = reader["Ad"],
-                                Soyad = reader["Soyad"],
-                                Departman = reader["departman"],
-                                IlkGiris = reader["IlkGiris"],
-                                SonCikis = reader["SonCikis"],
-                                FazlaMesaiDakika = reader["FazlaMesaiDakika"]
-                            });
-                        }
-                    }
-                }
-            }
-            return Ok(result);
-        }
+       
 
 
         //=================================
@@ -356,7 +397,7 @@ HAVING
             IF OBJECT_ID('tempdb..#GunlukMesai') IS NOT NULL
                 DROP TABLE #GunlukMesai;
 
-            -- 1. ADIM: Temel veri, TerminalID'ye bakılmaksızın en erken ve en geç saatlere göre oluşturuluyor.
+            
             SELECT
                 S.UserID,
                 S.Ad,
@@ -373,7 +414,6 @@ HAVING
             GROUP BY S.UserID, S.Ad, S.Soyad, B.Ad, CONVERT(date, P.EventTime)
             HAVING MIN(P.EventTime) < MAX(P.EventTime); -- Gün içinde en az iki farklı hareket olmalı
 
-            -- SORGU 1: Personel Bazlı Özetler (Bu sorgu aynı kalabilir, #GunlukMesai'den besleniyor)
             SELECT
                 UserID, Ad, Soyad, departman,
                 SUM(CASE WHEN IlkGiris > DATEADD(minute, 30, DATEADD(hour, 8, CAST(Tarih AS datetime))) THEN 1 ELSE 0 END) AS GecKalmaSayisi,
@@ -383,7 +423,6 @@ HAVING
             FROM #GunlukMesai
             GROUP BY UserID, Ad, Soyad, departman;
 
-            -- SORGU 2: Aralığın En'leri (Bu sorgu aynı kalabilir, #GunlukMesai'den besleniyor)
             WITH Numaralandirilmis AS (
                 SELECT *,
                     ROW_NUMBER() OVER(PARTITION BY Tarih ORDER BY IlkGiris ASC) as rn_erken,
@@ -401,7 +440,6 @@ HAVING
             WHERE E.rn_erken = 1 AND G.rn_gec = 1
             ORDER BY E.Tarih;
 
-            -- SORGU 3: Departman Bazlı Analizler (Bu sorgu aynı kalabilir, #GunlukMesai'den besleniyor)
             SELECT
                 ISNULL(departman, 'Belirtilmemiş') AS Departman,
                 COUNT(DISTINCT UserID) as KisiSayisi,
@@ -543,7 +581,11 @@ HAVING
 
 
 
-
+        //=================================
+        // bu api seçili gün aralığında gelmeyen personlleri listeliyor , sicil tablosunda işe giriş,çıkış tarihlerine bakarak seçili gün aralığında mevcut çalışanlar arasında
+        // pool tablosundan o gün giriş,çıkış datası olmayan personelleri bulup listeliyor.
+        // burdaki sql sorgusu daha sonra database e  PROCODURE olarak eklenebilir
+        //=================================
 
         [HttpGet("getGelmeyenler")]
         public IActionResult GetGelmeyenler([FromQuery] DateTime baslangic, [FromQuery] DateTime bitis)
@@ -557,8 +599,8 @@ HAVING
                 // DÜZELTME: Sorgunun son adımı, devamsızlıkları gün sayısına göre özetleyecek şekilde güncellendi.
                 string query = @"
             IF @Baslangic < '2024-01-01'
-              BEGIN 
-            -- 1. ADIM: Tarih aralığındaki günleri üreten takvim.
+           BEGIN 
+            
                    WITH Takvim AS (
                 SELECT CAST(@Baslangic AS DATE) AS Tarih
                 UNION ALL
@@ -567,16 +609,16 @@ HAVING
                 WHERE Tarih < @Bitis
             ),
 
-            -- 2. ADIM: O gün kimlerin işe geldiğini bulalım.
+          
             GelenPersoneller AS (
                 SELECT DISTINCT
                     CONVERT(date, P.EventTime) AS Tarih,
-                    CAST(P.SicilID AS INT) AS UserID
+                    CAST(P.UserID AS INT) AS UserID
                 FROM Pool P
                 WHERE CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
             ),
 
-            -- 3. ADIM: O gün çalışması gereken personeli ve iletişim bilgilerini bulalım.
+            
             BeklenenGelisler AS (
                 SELECT
                     T.Tarih,
@@ -591,7 +633,7 @@ HAVING
                     AND (S.CikisTarih IS NULL OR T.Tarih <= CONVERT(date, S.CikisTarih))
             )
 
-            -- 4. ADIM: Devamsızları bulup, kişi bazında devamsızlık yaptıkları GÜN SAYISINI toplayalım.
+            
             SELECT
                 BG.UserID, BG.Ad, BG.Soyad, BG.departman,
                 BG.EMail, BG.CepTelefon,
@@ -605,7 +647,7 @@ HAVING
                 DevamsizlikGunSayisi DESC
             OPTION (MAXRECURSION 0);
 
-        END
+          END
         ";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -632,9 +674,6 @@ HAVING
             }
             return Ok(result);
         }
-
-
-
 
 
 
@@ -701,13 +740,7 @@ HAVING
             }
             return Ok(result);
         }
-
-
-
-
-
-
-        // DataController.cs dosyanıza bu yeni metodu ekleyin
+        
 
         [HttpGet("getGelmeyenlerDetay")]
         public IActionResult GetGelmeyenlerDetay([FromQuery] DateTime baslangic, [FromQuery] DateTime bitis)
@@ -732,7 +765,7 @@ HAVING
             GelenPersoneller AS (
                 SELECT DISTINCT
                     CONVERT(date, P.EventTime) AS Tarih,
-                    CAST(P.SicilID AS INT) AS UserID
+                    CAST(P.UserID AS INT) AS UserID
                 FROM Pool P
                 WHERE CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
             ),
@@ -789,15 +822,235 @@ HAVING
         }
 
 
+        [HttpGet("erken-cikma-detaylari")]
+        public IActionResult GetErkenCikmaDetaylari([FromQuery] int userId, [FromQuery] DateTime baslangic, [FromQuery] DateTime bitis)
+        {
+            var result = new List<object>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string query = @"
+            SELECT
+                CONVERT(date, P.EventTime) AS Tarih,
+                MAX(P.EventTime) AS SonCikis
+            FROM Pool P
+            JOIN Sicil S ON CAST(P.UserID AS INT) = S.UserID
+            WHERE 
+                S.UserID = @UserId 
+                AND CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
+            GROUP BY CONVERT(date, P.EventTime)
+            HAVING 
+                -- 1. Kural: Erken çıkmış olmalı (Örnek: 17:30 öncesi)
+                MAX(P.EventTime) < DATEADD(minute, 30, DATEADD(hour, 17, CAST(CONVERT(date, P.EventTime) AS datetime)))
+                -- 2. Kural: Ve o gün hem giriş hem çıkış hareketi olmalı
+                AND MIN(P.EventTime) < MAX(P.EventTime)
+            ORDER BY Tarih;
+        ";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@UserId", userId);
+                    cmd.Parameters.AddWithValue("@Baslangic", baslangic.Date);
+                    cmd.Parameters.AddWithValue("@Bitis", bitis.Date);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            result.Add(new
+                            {
+                                Tarih = reader["Tarih"],
+                                SonCikis = reader["SonCikis"]
+                            });
+                        }
+                    }
+                }
+            }
+            return Ok(result);
+        }
+
+
+
+        // DataController.cs dosyanızdaki bu metodu güncelleyin
+
+        [HttpGet("gec-kalma-detaylari")]
+        public IActionResult GetGecKalmaDetaylari([FromQuery] int userId, [FromQuery] DateTime baslangic, [FromQuery] DateTime bitis)
+        {
+            var result = new List<object>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+
+                // DÜZELTME: Bu sorgu artık, özet rapordaki gibi,
+                // hem giriş hem de çıkış olan günleri dikkate alacak şekilde güncellendi.
+                string query = @"
+            SELECT
+                CONVERT(date, P.EventTime) AS Tarih,
+                MIN(P.EventTime) AS IlkGiris
+                -- SonCikis'i C#'a göndermeyeceğiz ama HAVING'de kullanmak için hesaplamalıyız.
+            FROM Pool P
+            JOIN Sicil S ON CAST(P.UserID AS INT) = S.UserID
+            WHERE 
+                S.UserID = @UserId 
+                AND CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
+            GROUP BY CONVERT(date, P.EventTime)
+            HAVING 
+                -- 1. Kural: Geç kalmış olmalı (Örnek: 08:30 sonrası)
+                MIN(P.EventTime) > DATEADD(minute, 30, DATEADD(hour, 8, CAST(CONVERT(date, P.EventTime) AS datetime)))
+                
+                -- 2. YENİ KURAL: Ve o gün hem giriş hem çıkış hareketi olmalı
+                AND MIN(P.EventTime) < MAX(P.EventTime)
+            ORDER BY Tarih;
+        ";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@UserId", userId);
+                    cmd.Parameters.AddWithValue("@Baslangic", baslangic.Date);
+                    cmd.Parameters.AddWithValue("@Bitis", bitis.Date);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            result.Add(new
+                            {
+                                Tarih = reader["Tarih"],
+                                IlkGiris = reader["IlkGiris"]
+                            });
+                        }
+                    }
+                }
+            }
+            return Ok(result);
+        }
+
+
+        [HttpGet("fazla-mesai-detaylari")]
+        public IActionResult GetFazlaMesaiDetaylari([FromQuery] int userId, [FromQuery] DateTime baslangic, [FromQuery] DateTime bitis)
+        {
+            var result = new List<object>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string query = @"
+            SELECT
+                CONVERT(date, P.EventTime) AS Tarih,
+                MAX(P.EventTime) AS SonCikis,
+                DATEDIFF(MINUTE, 
+                    DATEADD(minute, 30, DATEADD(hour, 17, CAST(CONVERT(date, P.EventTime) AS datetime))), 
+                    MAX(P.EventTime)
+                ) AS FazlaMesaiDakika
+            FROM Pool P
+            JOIN Sicil S ON CAST(P.UserID AS INT) = S.UserID
+            WHERE 
+                S.UserID = @UserId 
+                AND CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
+            GROUP BY CONVERT(date, P.EventTime)
+            HAVING 
+                MAX(P.EventTime) > DATEADD(minute, 30, DATEADD(hour, 17, CAST(CONVERT(date, P.EventTime) AS datetime)))
+                AND MIN(P.EventTime) < MAX(P.EventTime)
+            ORDER BY Tarih;
+        ";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@UserId", userId);
+                    cmd.Parameters.AddWithValue("@Baslangic", baslangic.Date);
+                    cmd.Parameters.AddWithValue("@Bitis", bitis.Date);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            result.Add(new
+                            {
+                                Tarih = reader["Tarih"],
+                                SonCikis = reader["SonCikis"],
+                                FazlaMesaiDakika = reader["FazlaMesaiDakika"]
+                            });
+                        }
+                    }
+                }
+            }
+            return Ok(result);
+        }
+
+
+
+        // DataController.cs dosyanızdaki bu metodu güncelleyin
+
+        [HttpGet("getDevamsizDetay")]
+        // DÜZELTME: Metot artık isteğe bağlı bir userId parametresi alıyor
+        public IActionResult GetDevamsizDetay([FromQuery] DateTime baslangic, [FromQuery] DateTime bitis, [FromQuery] int? userId)
+        {
+            var result = new List<object>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string query = @"
+            WITH Takvim AS (
+                SELECT CAST(@Baslangic AS DATE) AS Tarih
+                UNION ALL
+                SELECT DATEADD(day, 1, Tarih) FROM Takvim WHERE Tarih < @Bitis
+            ),
+            GelenPersoneller AS (
+                SELECT DISTINCT CONVERT(date, P.EventTime) AS Tarih, CAST(P.UserID AS INT) AS UserID
+                FROM Pool P WHERE CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
+            ),
+            BeklenenGelisler AS (
+                SELECT
+                    T.Tarih, S.UserID, S.Ad, S.Soyad, B.Ad AS departman, S.EMail, S.CepTelefon AS CepTelefon
+                FROM Takvim T
+                CROSS JOIN Sicil S
+                LEFT JOIN cbo_bolum B ON S.Bolum = B.ID
+                WHERE
+                    DATENAME(weekday, T.Tarih) NOT IN ('Saturday', 'Sunday', 'Cumartesi', 'Pazar')
+                    AND T.Tarih >= CONVERT(date, S.GirisTarih)
+                    AND (S.CikisTarih IS NULL OR T.Tarih <= CONVERT(date, S.CikisTarih))
+                    -- DÜZELTME: Eğer bir userId gönderildiyse, sadece o kişiyi dikkate al
+                    AND (@UserId IS NULL OR S.UserID = @UserId)
+            )
+            SELECT
+                BG.Tarih, BG.UserID, BG.Ad, BG.Soyad, BG.departman, BG.EMail, BG.CepTelefon
+            FROM BeklenenGelisler BG
+            LEFT JOIN GelenPersoneller GP ON BG.UserID = GP.UserID AND BG.Tarih = GP.Tarih
+            WHERE GP.UserID IS NULL
+            ORDER BY BG.Tarih, BG.Ad
+            OPTION (MAXRECURSION 0);
+        ";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Baslangic", baslangic.Date);
+                    cmd.Parameters.AddWithValue("@Bitis", bitis.Date);
+                    // DÜZELTME: Yeni userId parametresini sorguya ekle
+                    cmd.Parameters.AddWithValue("@UserId", (object)userId ?? DBNull.Value);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            result.Add(new
+                            {
+                                UserID = reader["UserID"],
+                                Ad = reader["Ad"],
+                                Soyad = reader["Soyad"],
+                                Departman = reader["departman"],
+                                Tarih = reader["Tarih"], // Artık her satırda tarih bilgisi var
+                                tel = reader["CepTelefon"],
+                                Email = reader["EMail"]
+                            });
+                        }
+                    }
+                }
+            }
+            return Ok(result);
+        }
+
+
 
 
 
 
 
     }
-
-
-
-
 
     }

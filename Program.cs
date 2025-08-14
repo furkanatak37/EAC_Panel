@@ -7,14 +7,12 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Swagger dev modda çalışsın
 if (app.Environment.IsDevelopment())
 {
 
 }
 
-// Statik dosyaları (HTML, CSS, JS) sun
-app.UseDefaultFiles(); // index.html gibi varsayılan dosyaları sunmak için
+app.UseDefaultFiles(); 
 app.UseStaticFiles();
 
 app.UseHttpsRedirection();

@@ -43,6 +43,110 @@
   },
   {
     "ContainingType": "WebApplication1.Controllers.DataController",
+    "Method": "GetErkenCikmaDetaylari",
+    "RelativePath": "api/Data/erken-cikma-detaylari",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "baslangic",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      },
+      {
+        "Name": "bitis",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebApplication1.Controllers.DataController",
+    "Method": "GetFazlaMesaiDetaylari",
+    "RelativePath": "api/Data/fazla-mesai-detaylari",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "baslangic",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      },
+      {
+        "Name": "bitis",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebApplication1.Controllers.DataController",
+    "Method": "GetGecKalmaDetaylari",
+    "RelativePath": "api/Data/gec-kalma-detaylari",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "baslangic",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      },
+      {
+        "Name": "bitis",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebApplication1.Controllers.DataController",
+    "Method": "GetDevamsizDetay",
+    "RelativePath": "api/Data/getDevamsizDetay",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "baslangic",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      },
+      {
+        "Name": "bitis",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      },
+      {
+        "Name": "userId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebApplication1.Controllers.DataController",
     "Method": "GetGelmeyenler",
     "RelativePath": "api/Data/getGelmeyenler",
     "HttpMethod": "GET",
@@ -101,6 +205,22 @@
   },
   {
     "ContainingType": "WebApplication1.Controllers.DataController",
+    "Method": "GetinfoDetay",
+    "RelativePath": "api/Data/getinfoDetay/{userId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebApplication1.Controllers.DataController",
     "Method": "GetIzinliler",
     "RelativePath": "api/Data/getIzinliler",
     "HttpMethod": "GET",
@@ -115,22 +235,6 @@
       {
         "Name": "bitis",
         "Type": "System.DateTime",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "WebApplication1.Controllers.DataController",
-    "Method": "GetGunlukOzet",
-    "RelativePath": "api/Data/gunluk-ozet",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "tarih",
-        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": false
       }
     ],

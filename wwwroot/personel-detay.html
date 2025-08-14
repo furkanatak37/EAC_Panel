@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personel Detayları</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="page-header">
+        <img src="assets/tp-otc.png" alt="Şirket Logosu" class="logo">
+        <h1>Personel Detay Profili</h1>
+    </header>
+
+    <main class="container report-page-container">
+        <div class="rapor-sayfasi-header">
+            <h2 class="rapor-baslik" id="personel-adi-baslik">Yükleniyor...</h2>
+            <a href="index.html" class="geri-don-butonu">&larr; Ana Panele Dön</a>
+        </div>
+        
+        <div class="profil-container">
+            <div class="profil-sol">
+                <div class="profil-foto-wrapper">
+                    <img id="personel-detay-foto" src="" alt="Personel Fotoğrafı">
+                </div>
+            </div>
+            
+            <div class="profil-sag">
+                <div class="profil-bilgiler kart">
+                    <h3>Temel Bilgiler</h3>
+                    <div id="personel-detay-liste">
+                        </div>
+                </div>
+
+                <div class="yetki-kutusu kart">
+                    <h3>Yetkiler</h3>
+                    <ul id="yetki-listesi">
+                        </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script src="js/personel-detay.js" defer></script>
+</body>
+</html>

@@ -7,11 +7,12 @@ const personelListesi = document.getElementById('personelListesi');
 const adFiltreInput = document.getElementById('adFiltre');
 const departmanFiltreSelect = document.getElementById('departmanFiltre');
 const gununEnleriIcerik = document.getElementById('gunun-enleri-icerik');
-const izinlilerListesi = document.getElementById('izinliler-icerik');
+const izinlilerListesi = document.getElementById('izinliler-listesi');
 
 const gecGelenlerListesi = document.getElementById('gec-gelenler-listesi');
 const erkenCikanlarListesi = document.getElementById('erken-cikanlar-listesi');
 const gelmeyenlerListesi = document.getElementById('gelmeyenler-listesi');
+const raporPaneli = document.querySelector('.rapor-paneli'); // DÜZELTME: Doğru konteyner seçildi
 
 const departmanAnalizIcerik = document.getElementById('departman-analiz-icerik');
 const fazlaMesaiListesi = document.getElementById('fazla-mesai-listesi');
@@ -40,11 +41,15 @@ const gecGelenlerDetayBtn = document.getElementById('gec-gelenler-detay-btn');
 
 const gelmeyenlerDetayBtn = document.getElementById('gelmeyenler-detay-btn');
 
+
+// script.js en üstü
+let currentAralikPersonelOzetleri = []; // Seçili aralıktaki personel özetini tutmak için
 const fazlaMesaiDetayBtn = document.getElementById('fazla-mesai-detay-btn');
 const raporOlusturBtn = document.getElementById('raporOlusturBtn');
 const departmanDetayBtn = document.getElementById('departman-detay-btn');
 const erkenCikanlarDetayBtn = document.getElementById('erken-cikanlar-detay-btn');
 
+const modalBody = document.getElementById('modal-body-content');
 
 const kisiDetayBaslik = document.getElementById('kisiDetayBaslik');
 const barChartContainer = document.getElementById('barChartContainer');
@@ -201,9 +206,10 @@ function personelleriGetir() {
 
 async function guncelleAralikRaporlari() {
 
-    raporKartlariContainer.classList.remove('compact-view');
-    toggleSizeIcon.innerHTML = compressIcon;
-    toggleSizeLabel.textContent = "Görünümü Küçült";
+    raporPaneli.classList.remove('panel-compact');
+     toggleSizeIcon.innerHTML = compressIcon;
+     toggleSizeLabel.textContent = "Görünümü Küçült";
+
     const baslangic = baslangicTarihInput.value;
     const bitis = bitisTarihInput.value;
     if (!baslangic || !bitis || new Date(baslangic) > new Date(bitis)) {
@@ -233,6 +239,7 @@ async function guncelleAralikRaporlari() {
         if (!response.ok) throw new Error(`API Hatası: ${response.status}`);
         const data = await response.json();
 
+        currentAralikPersonelOzetleri = data.personelOzetleri || [];
 
         renderGecKalanlarAralik(data.personelOzetleri || []);
         renderErkenCikanlarAralik(data.personelOzetleri || []);
@@ -275,70 +282,164 @@ async function guncelleAralikRaporlari() {
 
 }
 
+// script.js dosyanızdaki bu fonksiyonu güncelleyin
 function renderGecKalanlarAralik(personelOzetleri) {
     const gecKalanlar = personelOzetleri.filter(p => (p.gecKalmaSayisi || p.GecKalmaSayisi) > 0);
     gecGelenlerListesi.innerHTML = '';
-    if (gecKalanlar.length === 0) {
+    if (gecGelenlerListesi.length === 0) {
         gecGelenlerListesi.innerHTML = '<li>Bu aralıkta geç kalan personel bulunamadı.</li>';
         return;
     }
     gecKalanlar.sort((a, b) => (b.gecKalmaSayisi || b.GecKalmaSayisi) - (a.gecKalmaSayisi || a.GecKalmaSayisi));
+
     gecKalanlar.forEach(p => {
         const li = document.createElement('li');
-        li.textContent = `${p.Ad || p.ad} ${p.Soyad || p.soyad} (${p.gecKalmaSayisi || p.GecKalmaSayisi} kez)`;
+        // YENİ: Butonun tıklama olayında kullanılacak verileri data-* attribute'larına ekliyoruz.
+        li.innerHTML = `  
+    <div class="gecikme-detay">
+        <div class="gecikme-sol">
+            <span class="devamsiz-isim">${p.Ad || p.ad} ${p.Soyad || p.soyad}</span>
+            <span class="devamsiz-gun-sayisi"> (${p.gecKalmaSayisi || p.GecKalmaSayisi} kez)</span>
+        </div>
+        <button class="goster-btn" 
+                data-userid="${p.UserID || p.userID}" 
+                data-adsoyad="${p.Ad || p.ad} ${p.Soyad || p.soyad}">
+            Göster
+        </button>
+    </div>
+`;
+
         gecGelenlerListesi.appendChild(li);
     });
 }
 
 
+// script.js en altı
+
+// Gerekli modal elementlerini tanımla
+const detayModal = document.getElementById('detay-modal');
+const modalBodydetay = document.getElementById('detay-modal-body');
+
+// Olay delegasyonu ile "Geç Gelenler" listesindeki tıklamaları dinle
+gecGelenlerListesi.addEventListener('click', (event) => {
+    const gosterButonu = event.target.closest('.goster-btn');
+    if (gosterButonu) {
+        const userId = gosterButonu.dataset.userid;
+        const adSoyad = gosterButonu.dataset.adsoyad;
+        const baslangic = document.getElementById('baslangicTarih').value;
+        const bitis = document.getElementById('bitisTarih').value;
+
+        showGecKalmaDetayModal(userId, adSoyad, baslangic, bitis);
+    }
+});
+
+/**
+ * Belirtilen kişi için geç kaldığı günleri modal'da gösterir.
+ */
+async function showGecKalmaDetayModal(userId, adSoyad, baslangic, bitis) {
+    // Modal'ı aç ve yükleniyor mesajı göster
+    modalBodydetay.innerHTML = `<h4>${adSoyad} - Geç Kaldığı Günler</h4><p>Yükleniyor...</p>`;
+    openModal(detayModal);
+
+    try {
+        const response = await fetch(`/api/data/gec-kalma-detaylari?userId=${userId}&baslangic=${baslangic}&bitis=${bitis}`);
+        if (!response.ok) throw new Error("Detaylar alınamadı.");
+        const detaylar = await response.json();
+
+        if (detaylar.length === 0) {
+            modalBodydetay.innerHTML = `<h4>${adSoyad} - Geç Kaldığı Günler</h4><p>Listelenecek tarih bulunamadı.</p>`;
+            return;
+        }
+
+        // Gelen tarihleri liste olarak formatla
+        let listeHtml = `<ul class="detay-modal-liste">`;
+        detaylar.forEach(detay => {
+            const tarih = new Date(detay.tarih).toLocaleDateString('tr-TR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+            const girisSaati = new Date(detay.ilkGiris).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            listeHtml += `<li><strong>${tarih}:</strong> ${girisSaati}</li>`;
+        });
+        listeHtml += `</ul>`;
+
+        modalBodydetay.innerHTML = `<h4>${adSoyad} - Geç Kaldığı Günler</h4>${listeHtml}`;
+
+    } catch (error) {
+        console.error("Geç kalma detayları alınırken hata:", error);
+        modalBodydetay.innerHTML = `<h4>${adSoyad} - Geç Kaldığı Günler</h4><p style="color:red;">Detaylar yüklenirken bir hata oluştu.</p>`;
+    }
+}
+
 /**
  * Gelen özet verisine göre "Devamsızlar" kartını doldurur.
  */
+
+
+// script.js dosyanızdaki bu fonksiyonu güncelleyin
+// Fonksiyon adını diğerleriyle tutarlı olması için 'renderDevamsizlarAralik' yapmanızı öneririm.
+
 function renderGelmeyenler(devamsizlar) {
     gelmeyenlerListesi.innerHTML = '';
     if (!devamsizlar || devamsizlar.length === 0) {
         gelmeyenlerListesi.innerHTML = '<li>Bu aralıkta devamsızlık yapan personel bulunamadı.</li>';
         return;
     }
-
-    devamsizlar.sort((a, b) => (b.devamsizlikGunSayisi || b.devamsizlikGunSayisi) - (a.devamsizlikGunSayisi || a.devamsizlikGunSayisi));
+    devamsizlar.sort((a, b) => (b.devamsizlikGunSayisi || b.DevamsizlikGunSayisi) - (a.devamsizlikGunSayisi || a.DevamsizlikGunSayisi));
 
     devamsizlar.forEach(p => {
         const li = document.createElement('li');
-        const gunSayisi = p.devamsizlikGunSayisi || p.DevamsizlikGunSayisi;
         const adSoyad = `${p.Ad || p.ad} ${p.Soyad || p.soyad}`;
-        li.textContent = `
-            ${adSoyad}  (${gunSayisi} kez) 
-        `;
+        const gunSayisi = p.devamsizlikGunSayisi || p.DevamsizlikGunSayisi;
 
+        // "Geç Gelenler" ile aynı HTML yapısını ve sınıfları kullanıyoruz
+        li.innerHTML = `
+           <div class="gecikme-detay">
+              <div class="gecikme-detay-sol">
+            <span class="devamsiz-isim">${adSoyad}</span>
+         
+                <span class="devamsiz-gun-sayisi">(${gunSayisi} gün)</span>
+                </div>
+                <button class="goster-btn" 
+                        data-userid="${p.UserID || p.userID}" 
+                        data-adsoyad="${adSoyad}">
+                    Göster
+                </button>
+            </div>
+        `;
         gelmeyenlerListesi.appendChild(li);
     });
 }
 
-
+// script.js dosyanızdaki bu fonksiyonu güncelleyin
 function renderErkenCikanlarAralik(personelOzetleri) {
-
     const erkenCikanlar = personelOzetleri.filter(p => (p.erkenCikmaSayisi || p.ErkenCikmaSayisi) > 0);
-
-    erkenCikanlarListesi.innerHTML = ''; 
-
+    erkenCikanlarListesi.innerHTML = '';
     if (erkenCikanlar.length === 0) {
         erkenCikanlarListesi.innerHTML = '<li>Bu aralıkta erken çıkan personel bulunamadı.</li>';
         return;
     }
-
-
     erkenCikanlar.sort((a, b) => (b.erkenCikmaSayisi || b.ErkenCikmaSayisi) - (a.erkenCikmaSayisi || a.ErkenCikmaSayisi));
 
     erkenCikanlar.forEach(p => {
         const li = document.createElement('li');
-        const erkenCikmaSayisi = p.erkenCikmaSayisi || p.ErkenCikmaSayisi;
-        const adSoyad = `${p.Ad || p.ad} ${p.Soyad || p.soyad}`;
-        li.textContent = `${adSoyad} (${erkenCikmaSayisi} kez)`;
+        // "Geç Gelenler" ile aynı HTML yapısını ve sınıfları kullanıyoruz
+        li.innerHTML = `
+        <div class="gecikme-detay">
+         <div class="gecikme-sol">
+            <span class="devamsiz-isim">${p.Ad || p.ad} ${p.Soyad || p.soyad}</span>
+       
+                <span class="devamsiz-gun-sayisi"> (${p.erkenCikmaSayisi || p.ErkenCikmaSayisi} kez )</span>
+                     </div>
+                <button class="goster-btn" 
+                        data-userid="${p.UserID || p.userID}" 
+                        data-adsoyad="${p.Ad || p.ad} ${p.Soyad || p.soyad}">
+                    Göster
+                </button>
+            </div>
+        `;
         erkenCikanlarListesi.appendChild(li);
     });
 }
 
+// script.js dosyanızdaki bu fonksiyonu güncelleyin
 function renderFazlaMesaiAralik(personelOzetleri) {
     const mesaiYapanlar = personelOzetleri.filter(p => (p.toplamFazlaMesaiDakika || p.ToplamFazlaMesaiDakika) > 0);
     fazlaMesaiListesi.innerHTML = '';
@@ -347,6 +448,7 @@ function renderFazlaMesaiAralik(personelOzetleri) {
         return;
     }
     mesaiYapanlar.sort((a, b) => (b.toplamFazlaMesaiDakika || b.ToplamFazlaMesaiDakika) - (a.toplamFazlaMesaiDakika || a.ToplamFazlaMesaiDakika));
+
     mesaiYapanlar.forEach(p => {
         const li = document.createElement('li');
         const mesaiDakika = p.toplamFazlaMesaiDakika || p.ToplamFazlaMesaiDakika;
@@ -355,11 +457,24 @@ function renderFazlaMesaiAralik(personelOzetleri) {
         let mesaiSuresi = '';
         if (saat > 0) mesaiSuresi += `${saat} saat `;
         if (dakika > 0) mesaiSuresi += `${dakika} dakika`;
-        li.textContent = `${p.Ad || p.ad} ${p.Soyad || p.soyad} (+${mesaiSuresi.trim()})`;
+
+        li.innerHTML = `
+        <div class="gecikme-detay">
+        <div class="gecikme-detay-sol">
+            <span class="devamsiz-isim">${p.Ad || p.ad} ${p.Soyad || p.soyad}</span>
+            
+                <span class="devamsiz-gun-sayisi">(${"+" + mesaiSuresi.trim()})</span>
+                </div>
+                <button class="goster-btn" 
+                        data-userid="${p.UserID || p.userID}" 
+                        data-adsoyad="${p.Ad || p.ad} ${p.Soyad || p.soyad}">
+                    Göster
+                </button>
+            </div>
+        `;
         fazlaMesaiListesi.appendChild(li);
     });
 }
-
 
 function renderAraliginEnleri(enlerData) {
     gununEnleriIcerik.innerHTML = '';
@@ -372,18 +487,16 @@ function renderAraliginEnleri(enlerData) {
   
     const fragment = document.createDocumentFragment();
     enlerData.forEach(gununEni => {
-        const gunDiv = document.createElement('div');
+        const gunDiv = document.createElement('li');
         gunDiv.className = 'gunun-eni-item'; 
 
         const tarih = new Date(gununEni.tarih).toLocaleDateString('tr-TR', { weekday: 'long', day: '2-digit', month: 'long' });
         const erkenSaat = new Date(gununEni.enErkenGelisSaati).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
         const gecSaat = new Date(gununEni.enGecCikisSaati).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
-        gunDiv.innerHTML = `
-            <p class="gunun-eni-tarih"><strong>${tarih}</strong></p>
+        gunDiv.innerHTML = `<p class="gunun-eni-tarih"><strong>${tarih}</strong></p>
             <p><strong>Erken Gelen:</strong> ${gununEni.enErkenGelenIsim} (${erkenSaat})</p>
-            <p><strong>Geç Çıkan:</strong> ${gununEni.enGecCikanIsim} (${gecSaat})</p>
-        `;
+            <p><strong>Geç Çıkan:</strong> ${gununEni.enGecCikanIsim} (${gecSaat})</p>`;
         fragment.appendChild(gunDiv);
     });
 
@@ -444,24 +557,33 @@ function renderIzinliler(izinlilerData) {
 
 
 
+// script.js dosyanızdaki bu fonksiyonu güncelleyin
 function renderDepartmanAnaliziAralik(departmanOzetleri) {
     departmanAnalizIcerik.innerHTML = '';
-    if (departmanOzetleri.length === 0) {
+    if (!departmanOzetleri || departmanOzetleri.length === 0) {
         departmanAnalizIcerik.innerHTML = '<p>Analiz edilecek departman verisi yok.</p>';
         return;
     }
 
     departmanOzetleri.forEach(dep => {
-        const p = document.createElement('p');
-      
+        // 'p' yerine 'div' kullanarak daha iyi yapılandıralım
+        const itemDiv = document.createElement('li');
+        itemDiv.className = 'departman-analiz-item';
+
         const ortGiris = dep.ortalamaGiris.substring(0, 5);
         const ortCikis = dep.ortalamaCikis.substring(0, 5);
 
-        p.innerHTML = `<strong>${dep.departman} (${dep.kisiSayisi} kişi):</strong><br>Ort. Giriş: ${ortGiris} | Ort. Çıkış: ${ortCikis}`;
-        departmanAnalizIcerik.appendChild(p);
+        itemDiv.innerHTML = `
+            <div class="departman-analiz-bilgi">
+                <strong>${dep.departman}</strong>
+               <strong class="departman-kisi"> (${dep.kisiSayisi} kişi):</strong>
+               <small>Ort. Giriş: ${ortGiris} | Ort. Çıkış: ${ortCikis}</small>
+            </div>
+            <button class="goster-btn" data-departman="${dep.departman}">Göster</button>
+        `;
+        departmanAnalizIcerik.appendChild(itemDiv);
     });
 }
-
 
 function applyFilters() {
     const nameFilter = adFiltreInput.value.toLowerCase();
@@ -646,6 +768,8 @@ async function fetchAndDisplayPersonelInfo(userId) {
         const giris = infoData.giris;
         const telefon = infoData.tel || 'N/A';
         const ad = infoData.ad;
+        const departman = infoData.departman;
+
         const soyad = infoData.soyad;
         const fotoBase64 = infoData.foto || infoData.foto;
 
@@ -670,8 +794,11 @@ async function fetchAndDisplayPersonelInfo(userId) {
           <p><strong>Ad:</strong> ${ad}</p>
             <p><strong>Soyad:</strong> ${soyad}</p>
             <p><strong>USER No:</strong> ${userId}</p>
+            <p><strong>Departman:</strong> ${departman}</p>
             <p><strong>İşe Giriş Tarihi:</strong> ${giris}</p>
             <p><strong>Telefon:</strong> ${telefon}</p>
+            <a href="personel-detay.html?userId=${userId}" target="_blank" class="profil-goruntule-btn">Profili Görüntüle</a>
+
             </div>
         `;
         personelInfoIcerik.innerHTML = infoHtml;
@@ -683,11 +810,14 @@ async function fetchAndDisplayPersonelInfo(userId) {
 }
 const personelInfoKarti = document.getElementById('personel-info-karti');
 const anaGrafikAlani = document.getElementById('anaGrafikAlani');
+const chartsSectionContainer = document.getElementById('charts-section-container');
 
 function kisiSecildi(userId, adSoyad, clickedListItem) {
     document.querySelectorAll('#personelListesi li').forEach(item => item.classList.remove('selected'));
     if (clickedListItem) clickedListItem.classList.add('selected');
 
+
+    chartsSectionContainer.style.display = 'flex'; 
     fetchAndDisplayPersonelInfo(userId);
 
     kisiDetayBaslik.textContent = `${adSoyad} - Mesai Detayları`;
@@ -696,7 +826,7 @@ function kisiSecildi(userId, adSoyad, clickedListItem) {
     kisiDetayBaslik.style.display = 'block';
     gunlukDetayKutusu.style.display = 'block';
     personelInfoKarti.style.display = 'flex';
-    anaGrafikAlani.style.display = 'flex';
+   // anaGrafikAlani.style.display = 'flex';
 
     if (mesaiChart) mesaiChart.destroy();
     if (durumChart) durumChart.destroy();
@@ -709,9 +839,11 @@ function kisiSecildi(userId, adSoyad, clickedListItem) {
             currentPersonApiData = apiData;
             if (apiData.length === 0) {
 
+
+                chartsSectionContainer.style.display = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!'; 
                 gunlukDetayKutusu.innerHTML = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!';
                 personelInfoKarti.style.display = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!';
-                anaGrafikAlani.style.display = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!';
+             //   anaGrafikAlani.style.display = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!';
                 return;
             }
 
@@ -727,9 +859,13 @@ function kisiSecildi(userId, adSoyad, clickedListItem) {
             console.error('Mesai detayı alınırken hata:', error);
             gunlukDetayKutusu.innerHTML = 'Mesai verileri yüklenirken bir hata oluştu.';
         });
-    raporKartlariContainer.classList.add('compact-view');
+
+
+    raporPaneli.classList.add('panel-compact');
     toggleSizeIcon.innerHTML = expandIcon;
     toggleSizeLabel.textContent = "Görünümü Büyüt";
+
+    
     kisiDetayBaslik.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
 }
@@ -837,9 +973,8 @@ function createDoughnutChart(donutData) {
 
 
 function toggleCardSize() {
-
-    raporKartlariContainer.classList.toggle('compact-view');
-    if (raporKartlariContainer.classList.contains('compact-view')) {
+    raporPaneli.classList.toggle('panel-compact'); // DÜZELTME: Doğru konteynere sınıf ekleniyor
+    if (raporPaneli.classList.contains('panel-compact')) {
         toggleSizeIcon.innerHTML = expandIcon;
         toggleSizeLabel.textContent = "Görünümü Büyüt";
     } else {
@@ -847,7 +982,6 @@ function toggleCardSize() {
         toggleSizeLabel.textContent = "Görünümü Küçült";
     }
 }
-
 
 toggleSizeBtn.addEventListener('click', toggleCardSize);
 
@@ -859,7 +993,6 @@ toggleSizeLabel.textContent = "Görünümü Küçült";
 
 
 const infoModal = document.getElementById('info-modal');
-const modalBody = document.getElementById('modal-body-content');
 const photoLightbox = document.getElementById('photo-lightbox');
 const lightboxImage = document.getElementById('lightbox-image');
 
@@ -892,4 +1025,304 @@ function closeAllModals() {
         modal.classList.remove('is-visible');
     });
     document.body.classList.remove('modal-open');
+}
+
+
+
+
+
+
+
+// =================================================================================
+// RAPOR SEKMELERİ MANTIĞI
+// =================================================================================
+const raporSekmeleriContainer = document.querySelector('.rapor-sekmeleri');
+const raporIcerikAlanlari = document.querySelectorAll('.rapor-icerik-alani');
+
+raporSekmeleriContainer.addEventListener('click', (event) => {
+
+    raporPaneli.classList.remove('panel-compact');
+    toggleSizeIcon.innerHTML = compressIcon;
+    toggleSizeLabel.textContent = "Görünümü Küçült";
+    // Tıklanan elemanın bir sekme butonu olduğundan emin ol
+    const tiklananSekme = event.target.closest('.sekme-buton');
+    if (!tiklananSekme) return;
+
+    // Tüm sekme butonlarından 'aktif' sınıfını kaldır
+    raporSekmeleriContainer.querySelectorAll('.sekme-buton').forEach(btn => {
+        btn.classList.remove('aktif');
+    });
+
+    // Sadece tıklanan sekmeye 'aktif' sınıfını ekle
+    tiklananSekme.classList.add('aktif');
+
+    // İlgili rapor kartını göster, diğerlerini gizle
+    const raporTuru = tiklananSekme.dataset.rapor;
+    raporIcerikAlanlari.forEach(alan => {
+        if (alan.id === `rapor-${raporTuru}`) {
+            alan.classList.add('aktif');
+        } else {
+            alan.classList.remove('aktif');
+        }
+    });
+});
+
+
+
+
+
+
+
+
+
+// =================================================================================
+// GRAFİK SEKMELERİ MANTIĞI
+// =================================================================================
+const grafikSekmeleriContainer = document.querySelector('.grafik-sekmeleri');
+const grafikIcerikAlanlari = document.querySelectorAll('.grafik-icerik-alani');
+
+grafikSekmeleriContainer.addEventListener('click', (event) => {
+    const tiklananSekme = event.target.closest('.sekme-buton');
+    if (!tiklananSekme) return;
+
+    grafikSekmeleriContainer.querySelectorAll('.sekme-buton').forEach(btn => {
+        btn.classList.remove('aktif');
+    });
+    tiklananSekme.classList.add('aktif');
+
+    const grafikTuru = tiklananSekme.dataset.grafik;
+    grafikIcerikAlanlari.forEach(alan => {
+        if (alan.id === `grafik-${grafikTuru}`) {
+            alan.classList.add('aktif');
+        } else {
+            alan.classList.remove('aktif');
+        }
+    });
+});
+
+
+
+// script.js en altı
+
+// "Erken Çıkanlar" listesindeki tıklamaları dinle
+erkenCikanlarListesi.addEventListener('click', (event) => {
+    const gosterButonu = event.target.closest('.goster-btn');
+    if (gosterButonu) {
+        const userId = gosterButonu.dataset.userid;
+        const adSoyad = gosterButonu.dataset.adsoyad;
+        const baslangic = document.getElementById('baslangicTarih').value;
+        const bitis = document.getElementById('bitisTarih').value;
+
+        showErkenCikmaDetayModal(userId, adSoyad, baslangic, bitis);
+    }
+});
+
+/**
+ * Belirtilen kişi için erken çıktığı günleri modal'da gösterir.
+ */
+async function showErkenCikmaDetayModal(userId, adSoyad, baslangic, bitis) {
+    // Modal'ı aç ve yükleniyor mesajı göster
+    modalBodydetay.innerHTML = `<h4>${adSoyad} - Erken Çıktığı Günler</h4><p>Yükleniyor...</p>`;
+    openModal(detayModal);
+
+    try {
+        const response = await fetch(`/api/data/erken-cikma-detaylari?userId=${userId}&baslangic=${baslangic}&bitis=${bitis}`);
+        if (!response.ok) throw new Error("Detaylar alınamadı.");
+        const detaylar = await response.json();
+
+        if (detaylar.length === 0) {
+            modalBodydetay.innerHTML = `<h4>${adSoyad} - Erken Çıktığı Günler</h4><p>Listelenecek tarih bulunamadı.</p>`;
+            return;
+        }
+
+        // Gelen tarihleri liste olarak formatla
+        let listeHtml = `<ul class="detay-modal-liste">`;
+        detaylar.forEach(detay => {
+            const tarih = new Date(detay.tarih).toLocaleDateString('tr-TR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+            const cikisSaati = new Date(detay.sonCikis).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            listeHtml += `<li><strong>${tarih}:</strong> ${cikisSaati}</li>`;
+        });
+        listeHtml += `</ul>`;
+
+        modalBodydetay.innerHTML = `<h4>${adSoyad} - Erken Çıktığı Günler</h4>${listeHtml}`;
+
+    } catch (error) {
+        console.error("Erken çıkma detayları alınırken hata:", error);
+        modalBodydetay.innerHTML = `<h4>${adSoyad} - Erken Çıktığı Günler</h4><p style="color:red;">Detaylar yüklenirken bir hata oluştu.</p>`;
+    }
+}
+
+// script.js en altı
+
+// "Devamsızlar" listesindeki tıklamaları dinle
+gelmeyenlerListesi.addEventListener('click', (event) => {
+    const gosterButonu = event.target.closest('.goster-btn');
+    if (gosterButonu) {
+        const userId = gosterButonu.dataset.userid;
+        const adSoyad = gosterButonu.dataset.adsoyad;
+        const baslangic = document.getElementById('baslangicTarih').value;
+        const bitis = document.getElementById('bitisTarih').value;
+
+        showDevamsizlikDetayModal(userId, adSoyad, baslangic, bitis);
+    }
+});
+
+/**
+ * Belirtilen kişi için devamsızlık yaptığı günleri modal'da gösterir.
+ */
+async function showDevamsizlikDetayModal(userId, adSoyad, baslangic, bitis) {
+    modalBodydetay.innerHTML = `<h4>${adSoyad} - Devamsızlık Yaptığı Günler</h4><p>Yükleniyor...</p>`;
+    openModal(detayModal);
+
+    try {
+        // Backend'deki yeni API'yi çağırıyoruz
+        const response = await fetch(`/api/data/getDevamsizDetay?userId=${userId}&baslangic=${baslangic}&bitis=${bitis}`);
+        if (!response.ok) throw new Error("Detaylar alınamadı.");
+        const detaylar = await response.json();
+
+        if (detaylar.length === 0) {
+            modalBodydetay.innerHTML = `<h4>${adSoyad} - Devamsızlık Yaptığı Günler</h4><p>Listelenecek tarih bulunamadı.</p>`;
+            return;
+        }
+
+        // Gelen tarihleri liste olarak formatla
+        let listeHtml = `<ul class="detay-modal-liste">`;
+        detaylar.forEach(detay => {
+            const tarih = new Date(detay.tarih).toLocaleDateString('tr-TR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+            listeHtml += `<li>${tarih}</li>`;
+        });
+        listeHtml += `</ul>`;
+
+        modalBodydetay.innerHTML = `<h4>${adSoyad} - Devamsızlık Yaptığı Günler</h4>${listeHtml}`;
+
+    } catch (error) {
+        console.error("Devamsızlık detayları alınırken hata:", error);
+        modalBodydetay.innerHTML = `<h4>${adSoyad} - Devamsızlık Yaptığı Günler</h4><p style="color:red;">Detaylar yüklenirken bir hata oluştu.</p>`;
+    }
+}
+
+
+
+
+
+
+// script.js en altı
+
+// "Fazla Mesai" listesindeki tıklamaları dinle
+fazlaMesaiListesi.addEventListener('click', (event) => {
+    const gosterButonu = event.target.closest('.goster-btn');
+    if (gosterButonu) {
+        const userId = gosterButonu.dataset.userid;
+        const adSoyad = gosterButonu.dataset.adsoyad;
+        const baslangic = document.getElementById('baslangicTarih').value;
+        const bitis = document.getElementById('bitisTarih').value;
+
+        showFazlaMesaiDetayModal(userId, adSoyad, baslangic, bitis);
+    }
+});
+
+/**
+ * Belirtilen kişi için fazla mesai yaptığı günleri modal'da gösterir.
+ */
+async function showFazlaMesaiDetayModal(userId, adSoyad, baslangic, bitis) {
+    modalBodydetay.innerHTML = `<h4>${adSoyad} - Fazla Mesai Detayları</h4><p>Yükleniyor...</p>`;
+    openModal(detayModal);
+
+    try {
+        const response = await fetch(`/api/data/fazla-mesai-detaylari?userId=${userId}&baslangic=${baslangic}&bitis=${bitis}`);
+        if (!response.ok) throw new Error("Detaylar alınamadı.");
+        const detaylar = await response.json();
+
+        if (detaylar.length === 0) {
+            modalBodydetay.innerHTML = `<h4>${adSoyad} - Fazla Mesai Detayları</h4><p>Listelenecek tarih bulunamadı.</p>`;
+            return;
+        }
+
+        let listeHtml = `<ul class="detay-modal-liste">`;
+        detaylar.forEach(detay => {
+            const tarih = new Date(detay.tarih).toLocaleDateString('tr-TR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+            const cikisSaati = new Date(detay.sonCikis).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            const mesaiDakika = detay.fazlaMesaiDakika;
+            const saat = Math.floor(mesaiDakika / 60);
+            const dakika = mesaiDakika % 60;
+            let mesaiSuresi = '';
+            if (saat > 0) mesaiSuresi += `${saat} saat `;
+            if (dakika > 0) mesaiSuresi += `${dakika} dakika`;
+
+            listeHtml += `<li><strong>${tarih}:</strong> ${cikisSaati} (+${mesaiSuresi.trim()})</li>`;
+        });
+        listeHtml += `</ul>`;
+
+        modalBodydetay.innerHTML = `<h4>${adSoyad} - Fazla Mesai Detayları</h4>${listeHtml}`;
+
+    } catch (error) {
+        console.error("Fazla mesai detayları alınırken hata:", error);
+        modalBodydetay.innerHTML = `<h4>${adSoyad} - Fazla Mesai Detayları</h4><p style="color:red;">Detaylar yüklenirken bir hata oluştu.</p>`;
+    }
+}
+
+
+
+
+
+// script.js en altı
+
+// "Departman Analizi" listesindeki tıklamaları dinle
+departmanAnalizIcerik.addEventListener('click', (event) => {
+    const gosterButonu = event.target.closest('.goster-btn');
+    if (gosterButonu) {
+        const departmanAdi = gosterButonu.dataset.departman;
+        showDepartmanDetayModal(departmanAdi);
+    }
+});
+
+/**
+ * Belirtilen departmandaki personellerin performans özetini modal'da gösterir.
+ */
+function showDepartmanDetayModal(departmanAdi) {
+    // İlgili departmandaki personelleri global veriden filtrele
+    const departmanPersoneli = currentAralikPersonelOzetleri.filter(p => (p.Departman || p.departman) === departmanAdi);
+
+    // Modal için bir HTML tablosu oluştur
+    let tabloHtml = `
+        <h4>${departmanAdi} - Personel Detayları</h4>
+        <table class="detay-modal-tablo">
+            <thead>
+                <tr>
+                    <th>Ad Soyad</th>
+                    <th>Geç Kalma</th>
+                    <th>Erken Çıkma</th>
+                    <th>Fazla Mesai</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    departmanPersoneli.forEach(p => {
+        const gecKalma = p.gecKalmaSayisi || p.GecKalmaSayisi;
+        const erkenCikma = p.erkenCikmaSayisi || p.ErkenCikmaSayisi;
+        const mesaiDakika = p.toplamFazlaMesaiDakika || p.ToplamFazlaMesaiDakika;
+
+        let mesaiSuresi = "-";
+        if (mesaiDakika > 0) {
+            const saat = Math.floor(mesaiDakika / 60);
+            const dakika = mesaiDakika % 60;
+            mesaiSuresi = `+${saat}s ${dakika}d`;
+        }
+
+        tabloHtml += `
+            <tr>
+                <td>${p.Ad || p.ad} ${p.Soyad || p.soyad}</td>
+                <td>${gecKalma} kez</td>
+                <td>${erkenCikma} kez</td>
+                <td>${mesaiSuresi}</td>
+            </tr>
+        `;
+    });
+
+    tabloHtml += `</tbody></table>`;
+
+    // Modal'ı aç ve oluşturulan tabloyu içine yerleştir
+    modalBodydetay.innerHTML = tabloHtml;
+    openModal(detayModal);
 }

@@ -37,119 +37,119 @@
             <div class="reports-section">
                 <div class="rapor-header">
                     <div class="rapor-header-sol">
+
                         <h2 id="detayBaslik">Tarih Aralığı Raporları</h2>
 
+
+
                         <div id="toggle-size-btn" class="view-toggle-button">
-                            <span id="toggle-size-label"></span>  <span id="toggle-size-icon"></span>
+
+                            <span id="toggle-size-label"></span>  <span id="toggle-size-icon"></span>
+
+
 
                         </div>
 
+
+
                     </div>
-
                     <div class="tarih-araligi-secici">
-
                         <label for="baslangicTarih">Başlangıç:</label>
                         <input type="date" id="baslangicTarih">
                         <label for="bitisTarih">Bitiş:</label>
                         <input type="date" id="bitisTarih">
                         <button id="raporOlusturBtn" class="rapor-butonu">Raporla</button>
-
-
                     </div>
-
                 </div>
-                <div class="rapor-kartlari">
 
-                    <div class="kart gec-gelenler">
-                        <h3 class="kart-baslik">
-                            <span><span class="kart-ikon">⏰</span>Geç Gelenler (08:30 Sonrası)</span>
-                            <a href="#" id="gec-gelenler-detay-btn" class="kart-buton" target="_blank">Listele</a>
-                        </h3>
-                        <ul id="gec-gelenler-listesi"></ul>
-                    </div>
-                    <div class="kart erken-cikanlar">
-                        <h3 class="kart-baslik">
-                            <span><span class="kart-ikon">🏃</span>Erken Çıkanlar (17:30 Öncesi)</span>
-                            <a href="#" id="erken-cikanlar-detay-btn" class="kart-buton" target="_blank">Listele</a>
-                        </h3>
-                        <ul id="erken-cikanlar-listesi"></ul>
-                    </div>
-                    <div class="kart fazla-mesai">
-                        <h3 class="kart-baslik">
-                            <span><span class="kart-ikon">➕</span>Fazla Mesai Yapanlar</span>
-                            <a href="#" id="fazla-mesai-detay-btn" class="kart-buton" target="_blank">Listele</a>
-                        </h3>
-                        <ul id="fazla-mesai-listesi"></ul>
-                    </div>
-                    <div class="kart departman-analizi">
-                        <h3 class="kart-baslik">
-                            <span><span class="kart-ikon">🏢</span>Departman Analizi</span>
-
-                            <a href="#" id="departman-detay-btn" class="kart-buton" target="_blank">Listele</a>
-                        </h3>
-                        <div id="departman-analiz-icerik"></div>
+                <div class="rapor-paneli">
+                    <div class="rapor-sekmeleri">
+                        <button class="sekme-buton aktif" data-rapor="gec-gelenler">Geç Gelenler</button>
+                        <button class="sekme-buton" data-rapor="erken-cikanlar">Erken Çıkanlar</button>
+                        <button class="sekme-buton" data-rapor="fazla-mesai">Fazla Mesai</button>
+                        <button class="sekme-buton" data-rapor="gelmeyenler">Devamsızlar</button>
+                        <button class="sekme-buton" data-rapor="departman-analizi">Departman Analizi</button>
+                        <button class="sekme-buton" data-rapor="izinliler">İzinliler</button>
+                        <button class="sekme-buton" data-rapor="gunun-enleri">Aralığın En'leri</button>
                     </div>
 
+                    <div class="rapor-icerik">
+                        <div id="rapor-gec-gelenler" class="rapor-icerik-alani aktif">
+                            <ul id="gec-gelenler-listesi"></ul>
+                            <a href="#" id="gec-gelenler-detay-btn" class="kart-detay-link" target="_blank">Detaylı Rapor &rarr;</a>
+                        </div>
+                        <div id="rapor-erken-cikanlar" class="rapor-icerik-alani">
+                            <ul id="erken-cikanlar-listesi"></ul>
+                            <a href="#" id="erken-cikanlar-detay-btn" class="kart-detay-link" target="_blank">Detaylı Rapor &rarr;</a>
+                        </div>
+                        <div id="rapor-fazla-mesai" class="rapor-icerik-alani">
+                            <ul id="fazla-mesai-listesi"></ul>
+                            <a href="#" id="fazla-mesai-detay-btn" class="kart-detay-link" target="_blank">Detaylı Rapor &rarr;</a>
+                        </div>
+                        <div id="rapor-devamsizlar" class="rapor-icerik-alani">
+                            <ul id="devamsizlar-listesi"></ul>
+                            <a href="#" id="devamsizlar-detay-btn" class="kart-detay-link" target="_blank">Detaylı Rapor &rarr;</a>
+                        </div>
 
-                    <div class="kart gelmeyenler">
-                        <h3 class="kart-baslik">
-                            <span><span class="kart-ikon"> < - >  </span>Gelmeyenler</span>
-
-                            <a href="#" id="gelmeyenler-detay-btn" class="kart-buton" target="_blank">Listele</a>
-                        </h3>
-                        <ul id="gelmeyenler-listesi"></ul>
-                    </div>
-
-
-                    <div class="kart izinli">
-                        <h3><span class="kart-ikon">✍️</span>İzinliler</h3>
-
-                        <div id="izinliler-icerik"></div>
-                    </div>
-
-
-                    <div class="kart gunun-enleri">
-                        <h3><span class="kart-ikon">🏆</span>Günün En'leri</h3>
-
-                        <div id="gunun-enleri-icerik"></div>
+                        <div id="rapor-gelmeyenler" class="rapor-icerik-alani">
+                            <ul id="gelmeyenler-listesi"></ul>
+                            <a href="#" id="gelmeyenler-detay-btn" class="kart-detay-link" target="_blank">Detaylı Rapor &rarr;</a>
+                        </div>
+                        <div id="rapor-izinliler" class="rapor-icerik-alani">
+                            <div id="izinliler-listesi"></div>
+                        </div>
+                        <div id="rapor-departman-analizi" class="rapor-icerik-alani">
+                            <div id="departman-analiz-icerik"></div>
+                            <a href="#" id="departman-detay-btn" class="kart-detay-link" target="_blank">Detaylı Rapor &rarr;</a>
+                        </div>
+                        <div id="rapor-gunun-enleri" class="rapor-icerik-alani">
+                            <div id="gunun-enleri-icerik"></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="charts-section">
+            <div class="charts-section" id="charts-section-container" style="display:none;">
                 <hr class="rapor-ayrac">
-                <h2 id="kisiDetayBaslik" style="display:none;">Kişi Mesai Detayları</h2>
+                <h2 class="chart-header" id="kisiDetayBaslik">Kişi Mesai Detayları</h2>
 
-                <div class="details-wrapper">
-                    <div class="kart" id="personel-info-karti-detay" style="display:none;">
-                        <h3><span class="kart-ikon">ℹ️</span>Personel Bilgileri</h3>
-                        <div id="personel-info-icerik-detay"></div>
+                <div class="grafik-paneli">
+                    <div class="grafik-sekmeleri">
+                        <button class="sekme-buton aktif" data-grafik="gunluk-mesai">Günlük Mesai Süreleri</button>
+                        <button class="sekme-buton" data-grafik="mesai-dagilimi">Mesai Durum Dağılımı</button>
                     </div>
 
-                    <div class="charts-wrapper" id="anaGrafikAlani" style="display:none;">
-                        <div class="chart-container" id="barChartContainer">
+                    <div class="grafik-icerik">
+                        <div id="grafik-gunluk-mesai" class="grafik-icerik-alani aktif">
+                            <div class="chart-container" id="barChartContainer">
+                                <div class="chart-controls">
+                                    <label for="gunSecici">Grafikten bir gün seçin:</label>
+                                    <select id="gunSecici"></select>
+                                </div>
+                                <div id="gunlukDetay" class="gunluk-detay-kutusu" style="display:none;"></div>
 
-                            <label for="gunSecici">Grafikten bir gün seçin:</label>
-                            <select id="gunSecici"></select>
-                            <canvas id="mesaiChart"></canvas>
-
-                            <div class="chart-controls">
+                                <canvas id="mesaiChart"></canvas>
 
                             </div>
-
-                            <div id="gunlukDetay" class="gunluk-detay-kutusu" style="display:none;"></div>
                         </div>
-                        <div class="chart-container" id="donutChartContainer">
-                            <canvas id="durumChart"></canvas>
+
+                        <div id="grafik-mesai-dagilimi" class="grafik-icerik-alani">
+                            <div class="chart-container" id="donutChartContainer">
+                                <div class="canvas-wrapper">
+                                    <canvas id="durumChart"></canvas>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
+
+
+
+
     <script src="js/script.js" defer></script>
-
-
     <div class="modal" id="info-modal">
         <div class="modal-overlay" data-close-modal></div>
         <div class="modal-content">
@@ -159,6 +159,17 @@
         </div>
     </div>
 
-  
+
+    <div class="modal" id="detay-modal">
+        <div class="modal-overlay" data-close-modal></div>
+        <div class="modal-content">
+            <button class="modal-close" data-close-modal>&times;</button>
+            <div id="detay-modal-body">
+            </div>
+        </div>
+    </div>
+
+
+
 </body>
 </html>
