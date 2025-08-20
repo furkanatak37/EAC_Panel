@@ -6,7 +6,7 @@
     --info-color: #0dcaf0;
     --success-color: #198754;
     --dark-color: #212529;
-    --light-gray-color: #f8f9fa;
+    --light-gray-color: #495057;
     --border-color: #dee2e6;
     --body-bg-color: #f0f2f5;
     --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -45,7 +45,8 @@ body {
     .page-header .logo {
         height: 55px;
         width: auto;
-        padding-left:30px;
+        padding-left: 30px;
+        margin-left: auto;
     }
 
     .page-header h1 {
@@ -284,7 +285,7 @@ color:white;
 
 
 #donutChartContainer {
-    flex: 1; 
+    flex: 2; 
 }
 
 #barChartContainer {
@@ -383,12 +384,15 @@ color:white;
     }
 
     .rapor-butonu.excel {
+        
         background-color: #1D6F42;
+
     }
 
     .rapor-butonu.pdf {
         background-color: #D9232D;
     }
+
 
 .geri-don-butonu {
     padding: 8px 16px;
@@ -438,7 +442,20 @@ color:white;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
+/* style.css dosyanıza ekleyin */
 
+/* ==========================================================================
+   PASİF (DISABLED) FİLTRE STİLİ
+   ========================================================================== */
+
+.filter-controls select:disabled {
+    background-color: #e9ecef; /* Soluk gri arkaplan */
+    color: #adb5bd; /* Daha soluk yazı rengi */
+    cursor: not-allowed; /* "İzin verilmiyor" imleci */
+    opacity: 0.7; /* Hafifçe şeffaf yap */
+    /* Pasif durumdaki ok ikonunu da soluklaştır */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23adb5bd' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+}
     
     .detay-tablosu tbody tr:nth-of-type(even) {
         background-color: #fcfdff;
@@ -471,8 +488,8 @@ color:white;
     padding: 10px 15px;
     font-size: 0.95rem;
     font-family: inherit; 
-    color: var(--dark-color);
-    background-color: #ffffff;
+    color: white;
+    background-color: var(--primary-color);
     border: 1px solid var(--border-color);
     border-radius: 6px;
     transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
@@ -489,31 +506,112 @@ color:white;
 
     /* Placeholder metnini daha soluk yap */
     .filter-controls input[type="text"]::placeholder {
-        color: #a0a0a0;
+        color: black;
     }
 
 
 /* --- Özel İkonlu Stiller --- */
 
 /* İsim filtresi için arama ikonu */
-#adFiltre {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-    padding-right: 40px; /* İkon için yer aç */
-}
-
-/* Departman filtresi için aşağı ok ikonu */
-#departmanFiltre {
+/* Genel filtre stilleri */
+select {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
+    background-color: #ffffff; /* beyaz arka plan */
+    color: #212529; /* siyah metin */
+    border: 1px solid #ced4da; /* gri çerçeve */
+    border-radius: 6px;
+    padding: 8px 40px 8px 12px; /* ikon için sağda boşluk */
+    font-size: 14px;
+    cursor: pointer;
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+}
+
+    /* Hover ve focus efektleri */
+    select:hover {
+        border-color: #0d6efd;
+    }
+
+    select:focus {
+        outline: none;
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+    }
+
+/* Arama ikonu (adFiltre) */
+/* ==========================================================================
+   SIDEBAR FİLTRELERİ (Yeniden Düzenlenmiş)
+   ========================================================================== */
+
+/* ==========================================================================
+   SIDEBAR FİLTRELERİ (Yeniden Düzenlenmiş)
+   ========================================================================== */
+
+/* Filtrelerin genel sarmalayıcısı */
+.filter-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+}
+/* Rapor tablosundaki devamsız satırlarını gri yapar */
+.detay-tablosu tr.devamsiz-gun {
+    background-color: #f8f9fa; /* Açık gri */
+    color: #6c757d;
+    font-style: italic;
+}
+    /* Tüm filtre input ve select kutuları için ortak stil */
+    .filter-controls input[type="text"],
+    .filter-controls select {
+        width: 100%;
+        padding: 10px 15px;
+        font-size: 0.95rem;
+        color: var(--dark-color);
+        background-color: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        cursor: pointer;
+    }
+
+    .filter-controls input[type="text"] {
+        cursor: text;
+    }
+
+        /* Filtreye tıklandığında (focus) oluşacak mavi parlama efekti */
+        .filter-controls input[type="text"]:focus,
+        .filter-controls select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+        }
+
+/* İsim filtresi için arama ikonu (koyu gri) */
+#adFiltre {
+    padding-right: 40px; /* İkon için yer aç */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+
+}
+
+/* TÜM select kutuları için ortak aşağı ok ikonu (koyu gri) */
+#departmanFiltre,
+#firmaFiltre,
+#altfirmaFiltre {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 15px center;
     padding-right: 40px; /* İkon için yer aç */
 }
-
 /* Tarih seçicilerin genişliğini ayarla */
 .tarih-araligi-secici input[type="date"] {
     width: auto; /* Otomatik genişlik, içeriğine sığsın */
@@ -727,7 +825,7 @@ body {
 .page-header {
     display: flex;
     align-items: center;
-    gap: 20px;
+    justify-content: space-between; /* This is the key change */
     background-color: #ffffff;
     padding: 10px 30px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -744,6 +842,7 @@ body {
     .page-header .logo {
         height: 45px;
         width: auto;
+        margin-left: auto; /* Bu satırı ekleyin */
     }
 
     .page-header h1 {
@@ -948,9 +1047,7 @@ body {
     
 }
 
-#donutChartContainer {
-    flex: 0 0 40%;
-}
+
 /* Pasta grafiğe sabit bir oran verelim */
 .canvas-wrapper {
     position: relative;
@@ -2070,7 +2167,595 @@ body.modal-open {
 }
 
 
-.chart-header {
-    color: white;
-    
+
+
+
+
+/* ==========================================================================
+   HEADER VE NAVİGASYON
+   ========================================================================== */
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 30px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: 80px;
+
+
+
 }
+
+    .page-header h1 {
+        margin: 0;
+        font-size: 1.6rem;
+        color: #343a40;
+    }
+
+    .page-header .logo {
+        height: 45px;
+        width: auto;
+    }
+
+/* Header'ın sol ve sağ bölümlerinin genişliğini ayarlar */
+.header-left, .header-right {
+    flex: 1; /* Alanı eşit paylaşırlar */
+}
+
+.header-right {
+    display: flex;
+    justify-content: flex-end; 
+    margin-right:30px;
+}
+
+/* --- Tıklanabilir Açılır Menü Stilleri --- */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropbtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    margin-left:30px;
+    padding:12px 18px;
+}
+
+    .dropbtn:hover {
+        background-color: #0b5ed7;
+    }
+
+    .dropbtn svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+    }
+
+.dropdown-content {
+    display: none; /* JS ile kontrol edilecek */
+    position: absolute;
+    background-color: #ffffff;
+    min-width: 220px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.15);
+    z-index: 1;
+    border-radius: 6px;
+    margin-top: 5px;
+    border: 1px solid #f0f0f0;
+    overflow: hidden; /* Köşelerin düzgün görünmesi için */
+}
+
+    /* YENİ: JavaScript ile eklenecek olan 'show' sınıfı */
+    .dropdown-content.show {
+        display: block;
+    }
+
+    .dropdown-content a {
+        color: #343a40;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        font-size: 0.9rem;
+    }
+
+        .dropdown-content a:hover {
+            background-color: #f1f3f5;
+        }
+
+
+/* ==========================================================================
+   GANTT GRAFİK KONTROLLERİ VE ÖZET KUTUSU
+   ========================================================================== */
+
+.gantt-chart-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.gantt-tarih-araligi, .gantt-filtreler {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .gantt-tarih-araligi label, .gantt-filtreler label {
+        font-size: 0.9rem;
+        color: #495057;
+        cursor: pointer;
+    }
+
+    .gantt-tarih-araligi input[type="date"] {
+        padding: 5px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+    }
+
+    .gantt-filtreler input[type="checkbox"] {
+        cursor: pointer;
+    }
+
+.grafik-ozet-kutusu {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    padding: 10px;
+    margin-bottom: 15px;
+    background-color: #e9ecef;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.ozet-oge {
+    font-size: 0.9rem;
+}
+
+    .ozet-oge strong {
+        font-size: 1.2rem;
+        color: var(--primary-color);
+    }
+
+    .ozet-oge.kirmizi strong {
+        color: var(--danger-color);
+    }
+
+
+/* style.css dosyanızdaki bu kuralı güncelleyin */
+
+.dashboard-layout {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "sidebar reports"
+        "sidebar charts";
+    gap: 25px;
+    padding: 25px;
+    /* DÜZELTME: Yüksekliği, altta da 25px boşluk kalacak şekilde ayarlıyoruz */
+    height: calc(100vh - 70px - 65px); /* 70px header payı, 25px alt boşluk payı */
+}
+
+
+/* ==========================================================================
+   RAPOR SAYFASI KONTROL PANELİ STİLLERİ
+   ========================================================================== */
+
+/* Ana kontrol barı */
+.rapor-kontrolleri {
+    display: flex;
+    justify-content: space-between; /* Öğeleri iki uca yaslar */
+    align-items: center;
+    flex-wrap: wrap; /* Küçük ekranlarda alt satıra geçsin */
+    gap: 20px;
+    padding: 15px 20px;
+    background-color: #f8f9fa;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+}
+
+/* Filtrelerin olduğu sol grup */
+.filtre-grubu {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.tarih-araligi-secici,
+.opsiyonel-filtreler {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    /* Etiketler (Label) için stil */
+    .tarih-araligi-secici label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #495057;
+        white-space: nowrap;
+    }
+
+    /* Tarih, select gibi tüm form elemanları için genel stil */
+    .tarih-araligi-secici input[type="date"],
+    .opsiyonel-filtreler select {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+        font-family: inherit;
+        color: var(--dark-color);
+        background-color: #ffffff;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+        .tarih-araligi-secici input[type="date"]:focus,
+        .opsiyonel-filtreler select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+        }
+
+    /* Select kutuları için özel ok ikonu */
+    .opsiyonel-filtreler select {
+        min-width: 180px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        padding-right: 35px;
+    }
+
+/* Rapor aksiyonları (sağdaki butonlar) */
+.aksiyon-grubu {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+
+.rapor-header-sol{
+    align-items:start;
+    align-self:start;
+    margin-right:auto;
+}
+
+
+/* style.css dosyanızdaki ilgili kuralları bu blokla değiştirin */
+
+/* Butonları gruplayan ana sarmalayıcı */
+.buton-grup {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Butonlar arası boşluk */
+}
+
+/* Tüm rapor sayfası butonları için ortak temel stil */
+.rapor-butonu,
+.geri-don-butonu {
+    display: inline-flex; /* İkon ve metni hizalamak için */
+    align-items: center;
+    justify-content: center;
+    gap: 8px; /* İkon ve metin arası boşluk */
+    /* YENİ: Boyut ve Font Ayarları */
+    padding: 10px 18px; /* Butonları büyüttük */
+    font-size: 0.95rem;
+    font-weight: 500; /* Yazıyı daha dolgun yaptık */
+
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.2s ease-in-out;
+}
+
+    .rapor-butonu:hover,
+    .geri-don-butonu:hover {
+        opacity: 0.9;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: translateY(-1px);
+    }
+
+    /* Buton içindeki ikonların boyutu ve rengi */
+    .rapor-butonu svg,
+    .geri-don-butonu svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+    }
+
+    /* Butonlara özel renkler */
+    .rapor-butonu.excel {
+        background-color: #1D6F42;
+    }
+    /* Yeşil */
+    .rapor-butonu.pdf {
+        background-color: #B81D25;
+    }
+/* Kırmızı */
+.geri-don-butonu {
+    background-color: #6c757d;
+}
+/* Gri */
+
+/* ==========================================================================
+   RAPOR SAYFASI STİLLERİ (rapor.html)
+   ========================================================================== */
+
+.report-page-container {
+    padding: 25px;
+    background-color: transparent;
+}
+
+/* YENİ: Sayfa kaydırıldığında sabit kalacak ana sarmalayıcı */
+.sticky-rapor-header {
+    position: sticky;
+    top: 70px; /* 70px, ana header'ın yüksekliğidir. Onun hemen altına yapışır. */
+    z-index: 10;
+    background-color: var(--body-bg-color); /* Kayarken altındaki içeriğin görünmemesi için */
+}
+
+/* Üst başlık kısmı (artık kenarlık ve arkaplanı yok) */
+.rapor-sayfasi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 20px 15px 20px; /* Padding ayarlandı */
+    background-color: #ffffff;
+    border-radius: 8px 8px 0 0;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+}
+.mesai {
+    color: white;
+}
+
+.rapor-baslik {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+/* Filtrelerin olduğu kontrol barı */
+.rapor-kontrolleri {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 15px 20px;
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    border-top: 1px solid #f1f3f5; /* Üstündeki başlıkla arasına ince bir çizgi */
+    border-radius: 0 0 8px 8px;
+    margin-bottom: 25px; /* Tablo ile arasına boşluk koy */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+/* Tablo sarmalayıcısı (değişiklik yok) */
+.table-wrapper {
+    background-color: #ffffff;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Rapor sayfasındaki kayıt sayacı için ek boşluk */
+#rapor-kayit-sayaci {
+    padding: 0 20px 10px 20px;
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-bottom: none;
+    color:var(--danger-color);
+}
+
+/* style.css dosyanızdaki .temizle-btn kuralını bununla değiştirin */
+
+/* ==========================================================================
+   FİLTRE TEMİZLE BUTONU STİLİ
+   ========================================================================== */
+
+.temizle-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: auto;
+    background-color: var(--danger-color); /* Beyaz arkaplan */
+    border: 1px solid var(--border-color); /* Açık gri kenarlık */
+    color: white; /* Koyu gri yazı */
+
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none; /* Alt çizgiyi kaldır */
+    white-space: nowrap;
+    transition: all 0.2s ease-in-out;
+}
+
+    .temizle-btn:hover {
+        background-color: #f8f9fa; /* Hover'da hafif gri arkaplan */
+        border-color: #adb5bd; /* Kenarlık rengini koyulaştır */
+        color: var(--dark-color);
+    }
+
+    .temizle-btn:active {
+        background-color: #e9ecef; /* Tıklama anında daha koyu */
+        transform: translateY(1px); /* Hafifçe aşağı inme efekti */
+    }
+
+
+
+/* style.css dosyanıza ekleyin */
+
+/* Kişiye Özel Grafik Alanının Başlığı */
+#kisiDetayBaslik {
+    
+    color: white; /* YAZIYI BEYAZ YAPAR */
+
+    padding: 15px 25px;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+    /* Bu başlık, grafik panelinin bir parçası olduğu için
+       grafik panelinin üst köşeleriyle uyumlu olmalı. */
+    /* Eğer grafik panelinizin üst köşeleri yuvarlaksa bu kalsın. */
+    border-radius: 8px 8px 0 0;
+}
+
+
+/* --- Tıklanabilir Açılır Menü Stilleri (Güncellenmiş) --- */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropbtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #f8f9fa; /* Daha yumuşak bir renk */
+    color: var(--dark-color);
+    padding: 10px 15px;
+    border: 1px solid var(--border-color); /* Kenarlık eklendi */
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+    .dropbtn:hover {
+        border-color: #adb5bd;
+        background-color: #e9ecef;
+    }
+
+    .dropbtn svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+        color: var(--primary-color);
+    }
+
+.dropdown-content {
+    display: block; /* Animasyon için 'block' kalmalı */
+    position: absolute;
+    background-color: #ffffff;
+    min-width: 240px; /* Genişliği artırdık */
+    box-shadow: 0px 8px 24px 0px rgba(0,0,0,0.1);
+    z-index: 1001;
+    border-radius: 8px;
+    margin-top: 8px;
+    border: 1px solid #f0f0f0;
+    overflow: hidden;
+    /* YENİ: Animasyon için başlangıç durumu */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease-out;
+}
+
+    /* JavaScript ile eklenecek olan 'show' sınıfı */
+    .dropdown-content.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .dropdown-content a {
+        color: #343a40;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: flex; /* İkon ve metni hizalamak için */
+        align-items: center;
+        gap: 12px; /* İkon ve metin arası boşluk */
+        font-size: 0.9rem;
+    }
+
+        .dropdown-content a:hover {
+            background-color: #f1f3f5;
+            color: var(--primary-color);
+        }
+
+        .dropdown-content a svg {
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+        }
+
+/* Menü içindeki ayraç çizgisi */
+.dropdown-divider {
+    height: 1px;
+    margin: 8px 0;
+    overflow: hidden;
+    background-color: #e9ecef;
+}
+/* ==========================================================================
+   AKTİF FİLTRE GÖSTERGESİ (Kırmızı Nokta)
+   ========================================================================== */
+
+/* Her bir filtreyi ve noktayı içeren sarmalayıcı */
+.filter-wrapper {
+    position: relative;
+}
+
+/* Kırmızı noktanın stili */
+.filter-active-dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--danger-color); /* Kırmızı */
+    border-radius: 50%;
+    position: absolute;
+    top: 6px; /* Konumunu ayarlayabilirsiniz */
+    right: 6px; /* Konumunu ayarlayabilirsiniz */
+
+    box-shadow: 0 0 5px var(--danger-color);
+    /* Başlangıçta gizli */
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s ease-in-out;
+}
+
+/* Ana sarmalayıcıya 'filter-active' sınıfı eklendiğinde noktayı göster */
+.filter-wrapper.filter-active .filter-active-dot {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* style.css dosyasının sonuna ekleyin */
+
+/* Rapor tablosundaki izinli satırlarını mavi yapar */
+.detay-tablosu tr.izinli-gun {
+    background-color: #e7f1ff; /* Açık mavi */
+    color: #0a58ca; /* Koyu mavi yazı */
+}
+/* Mevcut devamsız ve kritik gecikme stilleriniz kalabilir */
