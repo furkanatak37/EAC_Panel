@@ -177,9 +177,62 @@ WHERE
 
             return Ok(result);
 
+         }
 
+
+
+
+        [HttpGet("getIzin/{userId}")]
+        public IActionResult GetInfo(int userId)
+        {
+            var result = new List<object>();
+
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+
+                string query = @"
+                         SELECT 
+                             i.BasTarih,
+                             i.BitTarih
+                                FROM Izinler i
+                                INNER JOIN Sicil s ON i.SicilID = s.ID
+                                WHERE s.UserID = @UserID;
+
+        ";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    // Bu parametre artık WHERE şartı tarafından kullanılacak
+                    cmd.Parameters.AddWithValue("@UserId", userId);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+
+                           
+
+                            result.Add(new
+                            {
+                                basTarih = reader["BasTarih"],
+                                bitTarih = reader["BitTarih"],
+                  
+
+                            });
+                        }
+                    }
+                }
+            }
+
+            return Ok(result);
 
         }
+
+
+
+
+
 
         [HttpGet("personel-mesai")]
         public IActionResult GetPersonelMesai()
@@ -256,20 +309,42 @@ HAVING
                 conn.Open();
                 // DÜZELTME: Sorguya SicilID, PersonelNo ve CardID eklendi.
                 string query = @"
-            SELECT
-                CONVERT(date, P.EventTime) AS Tarih,
-                MIN(P.EventTime) AS IlkGiris,
-                MAX(P.EventTime) AS SonCikis,
-                DATEDIFF(MINUTE, MIN(P.EventTime), MAX(P.EventTime)) AS ToplamMesaiDakika,
-                S.ID,
-                S.PersonelNo,
-                U.CardID
-            FROM Pool P
-            JOIN Sicil S ON CAST(P.UserID AS INT) = S.UserID
-            LEFT JOIN UserList U ON S.UserID = U.UserID
-            WHERE S.UserID = @UserId
-            GROUP BY CONVERT(date, P.EventTime), S.ID, S.PersonelNo, U.CardID
-            HAVING MIN(P.EventTime) < MAX(P.EventTime);
+                   SELECT
+    CONVERT(date, P.EventTime) AS Tarih,
+    MIN(P.EventTime) AS IlkGiris,
+    MAX(P.EventTime) AS SonCikis,
+    DATEDIFF(MINUTE, MIN(P.EventTime), MAX(P.EventTime)) AS ToplamMesaiDakika,
+    S.ID,
+    S.PersonelNo,
+    U.CardID,
+
+    -- Tekleştirilmiş izin tarihleri
+    COALESCE(iGun.BasTarih, iSaat.BasTarih) AS izinBasTarih,
+    COALESCE(iGun.BitTarih, iSaat.BitTarih) AS izinBitTarih
+
+FROM Pool P
+JOIN Sicil S ON CAST(P.UserID AS INT) = S.UserID
+LEFT JOIN UserList U ON S.UserID = U.UserID
+
+-- Gün bazlı izin
+LEFT JOIN Izinler iGun 
+       ON iGun.SicilID = S.ID
+      AND CONVERT(date, P.EventTime) 
+          BETWEEN CONVERT(date, iGun.BasTarih) AND CONVERT(date, iGun.BitTarih)
+
+-- Saat bazlı izin
+LEFT JOIN Izinler iSaat 
+       ON iSaat.SicilID = S.ID
+      AND P.EventTime BETWEEN iSaat.BasTarih AND iSaat.BitTarih
+
+WHERE S.UserID = @UserID
+GROUP BY CONVERT(date, P.EventTime), 
+         S.ID, S.PersonelNo, U.CardID, 
+         COALESCE(iGun.BasTarih, iSaat.BasTarih),
+         COALESCE(iGun.BitTarih, iSaat.BitTarih)
+HAVING MIN(P.EventTime) < MAX(P.EventTime);
+
+
         ";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -280,6 +355,9 @@ HAVING
                         {
                             result.Add(new
                             {
+                                izinBitTarih = reader["izinBitTarih"],
+                                izinBasTarih = reader["izinBasTarih"],
+
                                 Tarih = reader["Tarih"],
                                 IlkGiris = reader["IlkGiris"],
                                 SonCikis = reader["SonCikis"],
@@ -555,32 +633,50 @@ HAVING
                 conn.Open();
                 string query = @"
             SELECT
-                S.UserID, S.Ad, S.Soyad, S.PersonelNo, S.ID,
-                B.Ad AS DepartmanAdi,
-                F.Ad AS FirmaAdi,
-                AF.Ad AS AltFirmaAdi,
-                POZ.Ad AS PozisyonAdi,
-                CONVERT(date, P.EventTime) AS Tarih,
-                MIN(P.EventTime) AS IlkGiris,
-                MAX(P.EventTime) AS SonCikis
-            FROM Pool P
-            JOIN Sicil S ON CAST(P.UserID AS INT) = S.UserID
-            LEFT JOIN cbo_bolum B ON S.Bolum = B.ID
-            LEFT JOIN cbo_pozisyon POZ ON S.pozisyon = POZ.ID
-            LEFT JOIN cbo_firma F ON S.firma = F.ID
-            LEFT JOIN cbo_altfirma AF ON S.altfirma = AF.ID
-            WHERE 
-                CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
-                AND S.GirisTarih IS NOT NULL AND S.CikisTarih IS NULL
-                AND (@DepartmanId IS NULL OR S.Bolum = @DepartmanId)
-                AND (@FirmaId IS NULL OR S.firma = @FirmaId)
-                AND (@AltFirmaId IS NULL OR S.altfirma = @AltFirmaId)
-            GROUP BY 
-                S.UserID, S.Ad, S.Soyad, S.PersonelNo, S.ID,
-                B.Ad, F.Ad, AF.Ad, POZ.Ad, 
-                CONVERT(date, P.EventTime)
-            HAVING MIN(P.EventTime) < MAX(P.EventTime)
-            ORDER BY Tarih, IlkGiris;
+    S.UserID, S.Ad, S.Soyad, S.PersonelNo, S.SicilNo,
+    B.Ad AS DepartmanAdi,
+    F.Ad AS FirmaAdi,
+    AF.Ad AS AltFirmaAdi,
+    POZ.Ad AS PozisyonAdi,
+    CONVERT(date, P.EventTime) AS Tarih,
+    MIN(P.EventTime) AS IlkGiris,
+    MAX(P.EventTime) AS SonCikis,
+
+    -- İlk giriş yapılan terminal
+    (SELECT TOP 1 T.Name
+     FROM Pool P_in
+     JOIN Terminaller T ON T.ID = P_in.TerminalID
+     WHERE CAST(P_in.UserID AS INT) = S.UserID
+       AND CONVERT(date, P_in.EventTime) = CONVERT(date, P.EventTime)
+     ORDER BY P_in.EventTime ASC) AS IlkGirisTerminal,
+
+    -- Son çıkış yapılan terminal
+    (SELECT TOP 1 T.Name
+     FROM Pool P_out
+     JOIN Terminaller T ON T.ID = P_out.TerminalID
+     WHERE CAST(P_out.UserID AS INT) = S.UserID
+       AND CONVERT(date, P_out.EventTime) = CONVERT(date, P.EventTime)
+     ORDER BY P_out.EventTime DESC) AS SonCikisTerminal
+
+FROM Pool P
+JOIN Sicil S ON CAST(P.UserID AS INT) = S.UserID
+LEFT JOIN cbo_bolum B ON S.Bolum = B.ID
+LEFT JOIN cbo_pozisyon POZ ON S.pozisyon = POZ.ID
+LEFT JOIN cbo_firma F ON S.firma = F.ID
+LEFT JOIN cbo_altfirma AF ON S.altfirma = AF.ID
+WHERE 
+    CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
+    AND S.GirisTarih IS NOT NULL AND S.CikisTarih IS NULL
+    AND (@DepartmanId IS NULL OR S.Bolum = @DepartmanId)
+    AND (@FirmaId IS NULL OR S.firma = @FirmaId)
+    AND (@AltFirmaId IS NULL OR S.altfirma = @AltFirmaId)
+GROUP BY 
+    S.UserID, S.Ad, S.Soyad, S.PersonelNo, S.SicilNo,
+    B.Ad, F.Ad, AF.Ad, POZ.Ad, 
+    CONVERT(date, P.EventTime)
+HAVING MIN(P.EventTime) < MAX(P.EventTime)
+ORDER BY Tarih, IlkGiris;
+
         ";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -601,14 +697,17 @@ HAVING
                                 Ad = reader["Ad"],
                                 Soyad = reader["Soyad"],
                                 PersonelNo = reader["PersonelNo"],
-                                SicilID = reader["ID"],
+                                SicilNo = reader["SicilNo"],
+                                SicilID = reader["SicilNo"],
                                 Departman = reader["DepartmanAdi"],
                                 Firma = reader["FirmaAdi"],
                                 AltFirma = reader["AltFirmaAdi"],
                                 Pozisyon = reader["PozisyonAdi"],
                                 Tarih = reader["Tarih"],
                                 IlkGiris = reader["IlkGiris"],
-                                SonCikis = reader["SonCikis"]
+                                SonCikis = reader["SonCikis"],
+                                girisTerminal = reader["IlkGirisTerminal"] == DBNull.Value ? null : reader["IlkGirisTerminal"],
+                                cikisTerminal = reader["SonCikisTerminal"] == DBNull.Value ? null : reader["SonCikisTerminal"]
                             });
                         }
                     }
@@ -1203,7 +1302,7 @@ HAVING
             -- 1. ADIM: İlgili personelleri bir geçici tabloya al.
             SELECT 
                 S.UserID, S.Ad, S.Soyad, S.Bolum, S.firma, S.altfirma, S.GirisTarih, S.ID AS SicilTabloID,
-                B.Ad AS DepartmanAdi, F.Ad AS FirmaAdi, AF.Ad AS AltFirmaAdi
+                B.Ad AS DepartmanAdi, F.Ad AS FirmaAdi, AF.Ad AS AltFirmaAdi,S.SicilNo,S.PersonelNo
             INTO #IlgiliPersoneller
             FROM Sicil S
             LEFT JOIN cbo_bolum B ON S.Bolum = B.ID
@@ -1221,14 +1320,35 @@ HAVING
 
             -- 2. ADIM: Bu personellerin mesai verilerini başka bir geçici tabloya al.
             SELECT
-                S.UserID, CONVERT(date, P.EventTime) AS Tarih,
-                DATEDIFF(MINUTE, MIN(P.EventTime), MAX(P.EventTime)) AS ToplamMesaiDakika,S.SicilTabloID
-            INTO #GunlukMesailer
-            FROM Pool P
-            JOIN #IlgiliPersoneller S ON CAST(P.UserID AS INT) = S.UserID
-            WHERE CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
-            GROUP BY S.UserID, CONVERT(date, P.EventTime),S.SicilTabloID
-            HAVING MIN(P.EventTime) < MAX(P.EventTime);
+    S.UserID, 
+    CONVERT(date, P.EventTime) AS Tarih,
+    DATEDIFF(MINUTE, MIN(P.EventTime), MAX(P.EventTime)) AS ToplamMesaiDakika,
+    S.SicilTabloID,
+    S.SicilNo,
+    S.PersonelNo,
+
+    -- İlk giriş TerminalID -> Terminallerden Name
+    (SELECT TOP 1 T.Name 
+     FROM Pool P_in 
+     JOIN Terminaller T ON T.ID = P_in.TerminalID
+     WHERE CAST(P_in.UserID AS INT) = S.UserID
+       AND CONVERT(date, P_in.EventTime) = CONVERT(date, P.EventTime)
+     ORDER BY P_in.EventTime ASC) AS Giris_Terminal,
+
+    -- Son çıkış TerminalID -> Terminallerden Name
+    (SELECT TOP 1 T.Name 
+     FROM Pool P_out 
+     JOIN Terminaller T ON T.ID = P_out.TerminalID
+     WHERE CAST(P_out.UserID AS INT) = S.UserID
+       AND CONVERT(date, P_out.EventTime) = CONVERT(date, P.EventTime)
+     ORDER BY P_out.EventTime DESC) AS Cikis_Terminal
+
+INTO #GunlukMesailer
+FROM Pool P
+JOIN #IlgiliPersoneller S ON CAST(P.UserID AS INT) = S.UserID
+WHERE CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
+GROUP BY S.UserID, CONVERT(date, P.EventTime), S.SicilTabloID, S.SicilNo, S.PersonelNo
+HAVING MIN(P.EventTime) < MAX(P.EventTime);
             
             -- 3. ADIM: Takvimi oluşturalım.
             WITH Takvim AS (
@@ -1240,42 +1360,48 @@ HAVING
             -- 4. ADIM: Sonuçları birleştir.
             SELECT * FROM (
                 -- Kısım 1: Eksik Mesai Yapanlar
-                SELECT
-                    S.UserID, S.Ad, S.Soyad, S.DepartmanAdi, S.FirmaAdi, S.AltFirmaAdi,
-                    GM.Tarih, GM.ToplamMesaiDakika,S.SicilTabloID,
-                    -- YENİ: Saatlik izni varsa durumu detaylı yaz
-                    CASE
-                        WHEN I.SicilID IS NOT NULL 
-                        THEN 'Eksik Mesai (' + ISNULL('izinli : ' + IT.Aciklama, 'İzinli') + ')' + ' ' + FORMAT(I.BasTarih, 'HH:mm') + '-' + FORMAT(I.BitTarih, 'HH:mm') + ')'
-                        ELSE 'Eksik Mesai'
-                    END AS Durum
-                FROM #GunlukMesailer GM
-                JOIN #IlgiliPersoneller S ON GM.UserID = S.UserID
-                -- YENİ: Saatlik izin olup olmadığını kontrol etmek için Izinler ve IzinTipleri tablolarına JOIN
-                LEFT JOIN Izinler I ON GM.UserID = I.SicilID AND GM.Tarih = CONVERT(date, I.BasTarih) AND I.Saatlikizin = 1
-                LEFT JOIN IzinTipleri IT ON I.TipID = IT.ID
-                WHERE GM.ToplamMesaiDakika < 480
+SELECT
+    S.UserID, S.Ad, S.Soyad, S.DepartmanAdi, S.FirmaAdi, S.AltFirmaAdi,
+    GM.Tarih, GM.ToplamMesaiDakika, S.SicilTabloID, S.SicilNo, S.PersonelNo,
+    GM.Giris_Terminal, GM.Cikis_Terminal,  -- BURADA EKLENDİ
+    
+    CASE
+        WHEN I.SicilID IS NOT NULL 
+        THEN 'Eksik Mesai (' + ISNULL('izinli : ' + IT.Aciklama, 'İzinli') + ')' 
+             + ' ' + FORMAT(I.BasTarih, 'HH:mm') + '-' + FORMAT(I.BitTarih, 'HH:mm') + ')'
+        ELSE 'Eksik Mesai'
+    END AS Durum
+FROM #GunlukMesailer GM
+JOIN #IlgiliPersoneller S ON GM.UserID = S.UserID
+LEFT JOIN Izinler I ON GM.UserID = I.SicilID AND GM.Tarih = CONVERT(date, I.BasTarih) AND I.Saatlikizin = 1
+LEFT JOIN IzinTipleri IT ON I.TipID = IT.ID
+WHERE GM.ToplamMesaiDakika < 480
+
 
                 UNION ALL
+-- Kısım 2: Devamsızlık Yapanlar
+SELECT
+    S.UserID, S.Ad, S.Soyad, S.DepartmanAdi, S.FirmaAdi, S.AltFirmaAdi,
+    T.Tarih, 0 AS ToplamMesaiDakika, S.SicilTabloID, S.SicilNo, S.PersonelNo,
+    NULL AS Giris_Terminal,   -- EKLENDİ
+    NULL AS Cikis_Terminal,   -- EKLENDİ
+    
+    CASE 
+        WHEN I.SicilID IS NOT NULL
+        THEN 'Devamsız (' + ISNULL(IT.Aciklama, 'izinli') + ')' 
+        ELSE 'Devamsız' 
+    END AS Durum
+FROM Takvim T
+CROSS JOIN #IlgiliPersoneller S
+LEFT JOIN Izinler I ON I.SicilID = S.SicilTabloID 
+   AND T.Tarih BETWEEN CONVERT(date, I.BasTarih) AND CONVERT(date, I.BitTarih) 
+   AND (I.Saatlikizin = 0 OR I.Saatlikizin IS NULL)
+LEFT JOIN IzinTipleri IT ON I.TipID = IT.ID
+WHERE
+    DATENAME(weekday, T.Tarih) NOT IN ('Saturday', 'Sunday', 'Cumartesi', 'Pazar')
+    AND T.Tarih >= CONVERT(date, S.GirisTarih)
+    AND NOT EXISTS (SELECT 1 FROM #GunlukMesailer GM WHERE GM.UserID = S.UserID AND GM.Tarih = T.Tarih)
 
-                -- Kısım 2: Devamsızlık Yapanlar
-                SELECT
-                    S.UserID, S.Ad, S.Soyad, S.DepartmanAdi, S.FirmaAdi, S.AltFirmaAdi,
-                    T.Tarih, 0 AS ToplamMesaiDakika,S.SicilTabloID,
-                    -- YENİ: Tam günlük izinleri kontrol et ve izin türünü yaz
-                    CASE 
-                        WHEN I.SicilID IS NOT NULL
-                        THEN 'Devamsız (' + ISNULL(IT.Aciklama, 'izinli') + ')' 
-                        ELSE 'Devamsız' 
-                    END AS Durum
-                FROM Takvim T
-                CROSS JOIN #IlgiliPersoneller S
-                LEFT JOIN Izinler I ON I.SicilID = S.SicilTabloID AND T.Tarih BETWEEN CONVERT(date, I.BasTarih) AND CONVERT(date, I.BitTarih) AND (I.Saatlikizin = 0 OR I.Saatlikizin IS NULL)
-                LEFT JOIN IzinTipleri IT ON I.TipID = IT.ID
-                WHERE
-                    DATENAME(weekday, T.Tarih) NOT IN ('Saturday', 'Sunday', 'Cumartesi', 'Pazar')
-                    AND T.Tarih >= CONVERT(date, S.GirisTarih)
-                    AND NOT EXISTS (SELECT 1 FROM #GunlukMesailer GM WHERE GM.UserID = S.UserID AND GM.Tarih = T.Tarih)
             ) AS Sonuc
 
 WHERE (@DurumFiltresi IS NULL OR Durum LIKE '%' + @DurumFiltresi + '%')
@@ -1301,6 +1427,9 @@ WHERE (@DurumFiltresi IS NULL OR Durum LIKE '%' + @DurumFiltresi + '%')
                             {
                                 UserID = reader["UserID"],
                                 SicilID = reader["SicilTabloID"],
+                                SicilNo = reader["SicilNo"],
+                                personelNo = reader["PersonelNo"],
+
                                 Ad = reader["Ad"],
                                 Soyad = reader["Soyad"],
                                 Departman = reader["DepartmanAdi"],
@@ -1309,7 +1438,9 @@ WHERE (@DurumFiltresi IS NULL OR Durum LIKE '%' + @DurumFiltresi + '%')
                                 Tarih = reader["Tarih"],
                                 ToplamMesaiDakika = reader["ToplamMesaiDakika"],
                                 Durum = reader["Durum"],
-                 
+                                girisTerminal = reader["Giris_Terminal"] == DBNull.Value ? null : reader["Giris_Terminal"],
+                                cikisTerminal = reader["Cikis_Terminal"] == DBNull.Value ? null : reader["Cikis_Terminal"],
+
                             });
                         }
                     }

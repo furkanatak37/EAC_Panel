@@ -26,7 +26,7 @@ const gunlukDetayKutusu = document.getElementById('gunlukDetay');
 const gunSeciciSelect = document.getElementById('gunSecici');
 
 firmaFiltreSelect.addEventListener('change', applyFilters);
-Chart.register(ChartDataLabels); 
+Chart.register(ChartDataLabels);
 
 let currentPersonApiData = [];
 let mesaiChart = null;
@@ -37,9 +37,10 @@ let allPersonnel = [];
 const CHART_COLORS = {
     normal: 'rgba(40, 167, 69, 0.7)',
     eksik: 'rgba(220, 53, 69, 0.7)',    // Canlı Kırmızı (Hatalı/Eksik durumlar için)
-// Canlı Kırmızı (Hatalı/Eksik durumlar için)
+    // Canlı Kırmızı (Hatalı/Eksik durumlar için)
     fazla: 'rgba(13, 110, 253, 0.7)',   // Mavi (Pasta grafikteki fazla mesai için)
-   
+    izin: 'rgba(13, 202, 240, 0.3)',    // YENİ: Açık Mavi (İzin Rengi)
+
     // Kenarlıklar için renklerin opak olmayan (tam renk) halleri
     normal_border: 'rgba(40, 167, 69, 1)',
     eksik_border: 'rgba(220, 53, 69, 1)',
@@ -265,78 +266,317 @@ function generateOzetMetni(gec, erken, herIkisi, toplamGoruntulenen) {
 }
 
 
+// script.js dosyanızdaki bu fonksiyonu güncelleyin
+
+/**
+ * =================================================================================
+ * GÜNCELLENMİŞ FONKSİYON: updateChartWithFilters
+ * İzin verilerini işleme mantığı bu fonksiyona eklendi.
+ * =================================================================================
+ */
+
+// DOMContentLoaded bloğunun içinde
 function updateChartWithFilters() {
     const baslangic = new Date(grafikBaslangicInput.value);
     const bitis = new Date(grafikBitisInput.value);
 
-    const filtrelenmisVeri = aktifGrafikVerisi.filter(d => {
+    // --- YENİ MANTIK ADIM 1: Tam bir iş günü takvimi oluştur ---
+    const tumIsGunleri = [];
+    let gun = new Date(baslangic);
+    while (gun <= bitis) {
+        const dayOfWeek = gun.getDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Pazar (0) ve Cumartesi (6) hariç
+            tumIsGunleri.push(new Date(gun));
+        }
+        gun.setDate(gun.getDate() + 1);
+    }
+
+    const eksikFiltrele = eksikMesaiFiltre.checked;
+
+    let eksikMesaiSayisi = 0;
+
+    const labels = [];
+    const chartData = []; // Mesai verileri için
+    const leaveData = []; // YENİ: İzin verileri için
+    const backgroundColors = [];
+    let enGecCikisSaati = 18; // Varsayılan
+    let enErkenGirisSaati = 8;  // Varsayılan
+
+    // --- YENİ MANTIK ADIM 2: Orijinal veri yerine oluşturduğumuz takvim üzerinden döngü kur ---
+    tumIsGunleri.forEach(takvimGunu => {
+        const tarihString = takvimGunu.toISOString().split('T')[0];
+        labels.push(takvimGunu.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }));
+
+        // O takvim gününe ait veri 'aktifGrafikVerisi' içinde var mı diye kontrol et
+        const gunVerisi = aktifGrafikVerisi.find(d => (d.Tarih || d.tarih).startsWith(tarihString));
+
+        if (gunVerisi) {
+            // ----- MESAI VERİSİ İŞLEME (MEVCUT KISIM) -----
+            const ilkGiris = new Date(gunVerisi.IlkGiris || gunVerisi.ilkGiris);
+            const sonCikis = new Date(gunVerisi.SonCikis || gunVerisi.sonCikis);
+            const toplamMesai = gunVerisi.ToplamMesaiDakika || gunVerisi.toplamMesaiDakika || 0;
+            const isCalismaSuresiEksik = toplamMesai < 480;
+
+            if (isCalismaSuresiEksik) {
+                eksikMesaiSayisi++;
+            }
+
+            let barData = [ilkGiris.getHours() + ilkGiris.getMinutes() / 60, sonCikis.getHours() + sonCikis.getMinutes() / 60];
+
+            if (eksikFiltrele && !isCalismaSuresiEksik) {
+                barData = null;
+            }
+
+            chartData.push(barData);
+            backgroundColors.push(isCalismaSuresiEksik ? CHART_COLORS.eksik : CHART_COLORS.normal);
+
+            // Dinamik eksenler için en erken ve en geç saatleri bul
+            const cikisSaatiDecimal = sonCikis.getHours() + sonCikis.getMinutes() / 60;
+            if (cikisSaatiDecimal > enGecCikisSaati) enGecCikisSaati = cikisSaatiDecimal;
+            const girisSaatiDecimal = ilkGiris.getHours() + ilkGiris.getMinutes() / 60;
+            if (girisSaatiDecimal < enErkenGirisSaati) enErkenGirisSaati = girisSaatiDecimal;
+
+       
+            // ----- YENİ: İZİN VERİSİ İŞLEME KISMI -----
+            const izinBas = gunVerisi.izinBasTarih
+                ? new Date(String(gunVerisi.izinBasTarih).replace(" ", "T"))
+                : null;
+
+            const izinBit = gunVerisi.izinBitTarih
+                ? new Date(String(gunVerisi.izinBitTarih).replace(" ", "T"))
+                : null;
+
+          
+
+            if (izinBas && izinBit) {
+                const izinBasSaat = izinBas.getHours() + izinBas.getMinutes() / 60;
+                const izinBitSaat = izinBit.getHours() + izinBit.getMinutes() / 60;
+
+                // Eğer başlangıç ve bitiş aynıysa veya her ikisi de gece 12 ise, tam gün izin olarak kabul et (9 saatlik bar)
+                if (izinBas.getTime() === izinBit.getTime() || (izinBasSaat === 0 && izinBitSaat === 0)) {
+                    // Mesai başlangıç ve bitişini (örn: 08:30 - 17:30) baz alarak 9 saatlik bir bar oluştur
+                    leaveData.push([8.5, 17.5]);
+                } else {
+                    // Belirtilen saat aralığını kullan
+                    leaveData.push([izinBasSaat, izinBitSaat]);
+                }
+            } else {
+                // O gün için izin verisi yoksa, boşluk bırak
+                leaveData.push(null);
+            }
+
+        } else {
+            // Eğer o gün veri YOKSA (devamsız), hem mesai hem de izin için grafikte boşluk bırak
+            chartData.push(null);
+            leaveData.push(null); // İzin verisini de boş bırak
+            backgroundColors.push('transparent');
+        }
+    });
+
+    // Excel'e aktarılacak olan veriyi de bu yeni tam listeye göre güncelle
+    guncelGrafikVerisi = aktifGrafikVerisi.filter(d => {
         const tarih = new Date(d.Tarih || d.tarih);
         return tarih >= baslangic && tarih <= bitis;
     });
 
-    const eksikFiltrele = !eksikMesaiFiltre.checked;
-    let eksikMesaiSayisi = 0;
-
-    const labels = [];
-    const chartData = [];
-    const backgroundColors = [];
-    let enGecCikisSaati = 18;
-    let enErken = 8;
-
-    filtrelenmisVeri.forEach(d => {
-        const ilkGiris = new Date(d.IlkGiris || d.ilkGiris);
-        const sonCikis = new Date(d.SonCikis || d.sonCikis);
-        const toplamMesai = d.ToplamMesaiDakika || d.toplamMesaiDakika || 0;
-
-        // DÜZELTME 1: Renkler artık 8 saat (480 dk) kuralına göre belirleniyor
-        const isCalismaSuresiEksik = toplamMesai < 480;
-
-        if (isCalismaSuresiEksik) {
-            eksikMesaiSayisi++;
-        }
-
-        labels.push(new Date(d.Tarih || d.tarih).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }));
-        backgroundColors.push(isCalismaSuresiEksik ? CHART_COLORS.eksik : CHART_COLORS.normal);
-
-        let gunVerisi = [ilkGiris.getHours() + ilkGiris.getMinutes() / 60, sonCikis.getHours() + sonCikis.getMinutes() / 60];
-        if (!eksikFiltrele && !isCalismaSuresiEksik) {
-            gunVerisi = null;
-        }
-        chartData.push(gunVerisi);
-
-        // DÜZELTME 2: En geç çıkış saatini bul
-        const cikisSaatiDecimal = sonCikis.getHours() + sonCikis.getMinutes() / 60;
-        if (cikisSaatiDecimal > enGecCikisSaati) {
-            enGecCikisSaati = cikisSaatiDecimal;
-        }
-
-
-        const girisSaatiDecimal = ilkGiris.getHours() + ilkGiris.getMinutes() / 60;
-        if (girisSaatiDecimal < enErken) {
-            enErken = girisSaatiDecimal;
-        }
-
-
-    });
-    guncelGrafikVerisi = filtrelenmisVeri.filter(d => {
-        const toplamMesai = d.ToplamMesaiDakika || d.toplamMesaiDakika || 0;
-        const isCalismaSuresiEksik = toplamMesai < 480;
-
-        // Eğer "Eksik Mesai" filtresi seçili DEĞİLSE ve bu gün eksik bir gün İSE,
-        // bu kaydı listeye dahil ETME (false döndür).
-        if (eksikFiltrele && isCalismaSuresiEksik) {
-            return false;
-        }
-        // Diğer tüm durumlarda kaydı listede tut (true döndür).
-        return true;
-    });
+    // Özet Kutusunu Güncelle
     grafikOzetKutusu.innerHTML = `
         <div class="ozet-oge kirmizi"><strong>${eksikMesaiSayisi}</strong> gün eksik mesai yapıldı</div>
-        <div class="ozet-oge"><strong>${labels.length}</strong> gün görüntülendi</div>
+        <div class="ozet-oge"><strong>${labels.length}</strong> iş günü görüntülendi</div>
     `;
 
-    // Grafiği çiz ve dinamik Y ekseni için en geç çıkış saatini gönder
-    drawGanttChart(labels, chartData, backgroundColors, enGecCikisSaati, enErken);
+    // Grafiği çiz ve YENİ İZİN VERİSİNİ de gönder
+    drawGanttChart(labels, chartData, backgroundColors, leaveData, enGecCikisSaati, enErkenGirisSaati);
+}
+
+
+/**
+ * =================================================================================
+ * GÜNCELLENMİŞ FONKSİYON: drawGanttChart
+ * İkinci bir dataset (izinler için) ve dinamik tooltip mantığı eklendi.
+ * =================================================================================
+ */
+/**
+ * =================================================================================
+ * GÜNCELLENMİŞ FONKSİYON: drawGanttChart
+ * getContext('2d') yazım hatası düzeltildi.
+ * =================================================================================
+ */
+/**
+ * =================================================================================
+ * GÜNCELLENMİŞ FONKSİYON: drawGanttChart
+ * - Barların üst üste binmesi (overlap) sağlandı.
+ * - Bar kalınlıkları orijinal haline getirildi.
+ * - İzin barının saydamlığı artırıldı.
+ * =================================================================================
+ */
+/**
+ * =================================================================================
+ * GÜNCELLENMİŞ FONKSİYON: drawGanttChart
+ * - Veri setlerinin çizim sırası `order` özelliği ile garanti altına alındı.
+ * - 'İzin Aralığı' her zaman 'Çalışma Aralığı'nın üzerinde çizilecek.
+ * =================================================================================
+ */
+/**
+ * =================================================================================
+ * GÜNCELLENMİŞ FONKSİYON: drawGanttChart (Kesin Çözüm)
+ * - Veri setlerinin dizideki sırası değiştirilerek çizim önceliği sorunu çözüldü.
+ * - Saydam 'İzin Aralığı' artık ilk sırada (arkada) çiziliyor.
+ * =================================================================================
+ */
+/**
+ * =================================================================================
+ * GÜNCELLENMİŞ FONKSİYON: drawGanttChart (Nihai Çözüm)
+ * - YAN YANA GELME SORUNU: Her iki veri setine de aynı `stack` adı verilerek
+ * Chart.js'in onları aynı alana çizmesi sağlandı.
+ * - GÖRÜNÜRLÜK SORUNU: Opak olan "Çalışma Aralığı" veri seti ilk sıraya,
+ * saydam olan "İzin Aralığı" ikinci sıraya alınarak doğru çizim sırası garanti edildi.
+ * =================================================================================
+ */
+function drawGanttChart(labels, chartData, backgroundColors, leaveData, enGecCikis, enErken) {
+    if (mesaiChart) {
+        mesaiChart.destroy();
+    }
+    const ctx = document.getElementById('mesaiChart').getContext('2d');
+
+    if (!ctx) {
+        console.error("Grafik çizilemedi: 'mesaiChart' ID'li canvas elementi bulunamadı.");
+        return;
+    }
+
+    const yAxisMax = Math.max(18, Math.ceil(enGecCikis));
+    const yAxisMin = Math.min(8, Math.floor(enErken));
+
+    const formatla = (saat) => {
+        const h = Math.floor(saat);
+        const m = Math.round((saat - h) * 60);
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    };
+
+    mesaiChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                // 1. ÖNCE BU ÇİZİLECEK (ARKADA)
+                {
+                    
+                    data: chartData,
+                    backgroundColor: backgroundColors,
+                    borderSkipped: false,
+                    // YENİ: Bu seti 'gantt' yığınına ata
+                    order: 2
+                },
+                // 2. SONRA BU ÇİZİLECEK (ÖNDE, ÜSTTE)
+                {
+                    label: 'İzin Aralığı',
+                    data: leaveData,
+                    backgroundColor: 'rgba(0, 123, 255, 0.4)',
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                    borderWidth: 1,
+                    borderSkipped: false,
+                    // YENİ: Bu seti de 'gantt' yığınına ata. İsimler aynı olmalı!
+                    order:1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    title: { display: true, text: 'Tarih' },
+                    stacked: true,
+                    grouped: false
+                },
+                y: {
+                    min: yAxisMin,
+                    max: yAxisMax,
+                    ticks: {
+                        stepSize: 1,
+                        callback: function (value) {
+                            if (Math.floor(value) === value) {
+                                return value.toString().padStart(2, '0') + ':00';
+                            }
+                        }
+                    },
+                    title: { display: true, text: 'Saat' },
+                    stacked: false
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false,
+                },
+                datalabels: { display: false },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    position: 'nearest',  
+                    yAlign: 'center',      // dikeyde ortala
+                    xAlign: 'auto',
+                    callbacks: {
+                        label: function (context) {
+                            const val = context.raw;
+                            if (!val) return '';
+
+                            if (
+                                context.dataset.label === 'İzin Aralığı'
+                            ) {
+                                return null;
+                            }
+                            const sureDecimal = val[1] - val[0];
+                            const sureSaat = Math.floor(sureDecimal);
+                            const sureDakika = Math.round((sureDecimal - sureSaat) * 60);
+
+                            let calisilanSureMetni = '';
+                            if (sureSaat > 0) calisilanSureMetni += `${sureSaat} saat `;
+                            if (sureDakika > 0) calisilanSureMetni += `${sureDakika} dakika`;
+                            calisilanSureMetni = calisilanSureMetni.trim() || '0 dakika';
+
+                            return `Mesai: ${formatla(val[0])} - ${formatla(val[1])} (${calisilanSureMetni})`;
+                        }
+                    }
+                },
+                annotation: {
+                    annotations: {
+                        mesaiBaslangic: {
+                            type: 'line',
+                            yMin: 8.5,
+                            yMax: 8.5,
+                            borderColor: 'rgba(75, 192, 192, 0.8)',
+                            borderWidth: 2,
+                            borderDash: [6, 6],
+                            label: {
+                                content: 'Mesai Başlangıcı (8:30)',
+                                display: true,
+                                position: 'end',
+                                backgroundColor: 'rgba(75, 192, 192, 0.8)',
+                                color: 'white',
+                                font: { weight: 'bold' }
+                            }
+                        },
+                        mesaiBitis: {
+                            type: 'line',
+                            yMin: 17.5,
+                            yMax: 17.5,
+                            borderColor: 'rgba(255, 99, 132, 0.8)',
+                            borderWidth: 2,
+                            borderDash: [6, 6],
+                            label: {
+                                content: 'Mesai Bitişi (17:30)',
+                                display: true,
+                                position: 'end',
+                                backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                                color: 'white',
+                                font: { weight: 'bold' }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
 }
 function createAdvancedBarChart(apiData) {
     aktifGrafikVerisi = apiData; // Veriyi global değişkene ata
@@ -360,148 +600,10 @@ function createAdvancedBarChart(apiData) {
     // Grafiği ilk kez çiz
     updateChartWithFilters();
 }
-function drawGanttChart(labels, chartData, backgroundColors, enGecCikis,enErken) {
-    if (mesaiChart) {
-        mesaiChart.destroy();
-    }
-    const ctx = document.getElementById('mesaiChart').getContext('2d');
-
-    // Y ekseninin bitişini hesapla: En geç çıkış saatini bir sonraki saate yuvarla.
-    // Ama en az 18:00 olsun ki grafik çok sıkışmasın.
-    const yAxisMax = Math.max(18, Math.ceil(enGecCikis));
-    const yAxisMin = Math.min(8, Math.ceil(enErken));
-    console.log(enErken);
-    mesaiChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Çalışma Aralığı',
-                data: chartData,
-                backgroundColor: backgroundColors,
-                borderSkipped: false,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: { title: { display: true, text: 'Tarih' } },
-                y: {
-                    min: yAxisMin,    // Başlangıç 08:30 (sabit)
-                    max: yAxisMax, // Bitiş (dinamik)
-                    ticks: {
-                        stepSize: 1, // Saatleri birer birer göstermesi için
-                        callback: function (value) {
-                            if (Math.floor(value) === value) { // Sadece tam saatleri yaz
-                                return value.toString().padStart(2, '0') + ':00';
-                            }
-                        }
-                    },
-                    title: { display: true, text: 'Saat' }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false // Bu satır, üstteki "Çalışma Aralığı" etiketini kaldırır
-                },
-                datalabels: { display: false },
-                tooltip: {
-                    callbacks: {
-                        // drawGanttChart fonksiyonu içinde, options -> plugins -> tooltip -> callbacks -> label
-
-                        label: function (context) {
-                            const val = context.raw;
-                            if (!val) return ''; // Eğer veri null ise tooltip gösterme
-
-                            const formatla = (saat) => {
-                                const h = Math.floor(saat);
-                                const m = Math.round((saat - h) * 60);
-                                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-                            };
-
-                            // === YENİ HESAPLAMA KISMI ===
-
-                            // 1. Toplam süreyi ondalık saat olarak hesapla (örn: 8.5)
-                            const sureDecimal = val[1] - val[0];
-
-                            // 2. Ondalık saati, tam saat ve dakikaya ayır
-                            const sureSaat = Math.floor(sureDecimal);
-                            const sureDakika = Math.round((sureDecimal - sureSaat) * 60);
-
-                            // 3. Gösterilecek metni oluştur ("8 saat 30 dakika" gibi)
-                            let calisilanSureMetni = '';
-                            if (sureSaat > 0) {
-                                calisilanSureMetni += `${sureSaat} saat `;
-                            }
-                            if (sureDakika > 0) {
-                                calisilanSureMetni += `${sureDakika} dakika`;
-                            }
-                            calisilanSureMetni = calisilanSureMetni.trim();
-                            if (calisilanSureMetni === '') {
-                                calisilanSureMetni = '0 dakika';
-                            }
-                            // === HESAPLAMA BİTTİ ===
-
-                            // Tooltip'in son halini birleştir (Array kullanarak çok satırlı yapıyoruz)
-                            return [
-                                `Çalışılan Süre: ${calisilanSureMetni}`,
-                                ``, // Boş bir satır ekleyerek ayırıcı oluştur
-                                `Giriş: ${formatla(val[0])}`,
-                                `Çıkış: ${formatla(val[1])}`
-                            ];
-                        
-                        }
-                    }
-                },
-                annotation: {
-                    annotations: {
-                        mesaiBaslangic: {
-                            type: 'line',
-                            // 'yValue' yerine 'yMin' ve 'yMax' kullanarak çizginin
-                            // kesinlikle yatay olmasını sağlıyoruz.
-                            yMin: 8.5,
-                            yMax: 8.5,
-                            borderColor: 'rgba(75, 192, 192, 0.8)',
-                            borderWidth: 2, // Çizgiyi biraz kalınlaştıralım
-                            borderDash: [6, 6],
-                            label: {
-                                content: 'Mesai Başlangıcı (8:30)',
-                                display: true,
-                                position: 'end', // Etiketi sağa alalım
-                                backgroundColor: 'rgba(75, 192, 192, 0.8)',
-                                color: 'white',
-                                font: { weight: 'bold' }
-                            }
-                        },
-                        mesaiBitis: {
-                            type: 'line',
-                            // 'yValue' yerine 'yMin' ve 'yMax' kullanıyoruz.
-                            yMin: 17.5,
-                            yMax: 17.5, // 17.5 = 17:30
-                            borderColor: 'rgba(255, 99, 132, 0.8)',
-                            borderWidth: 2,
-                            borderDash: [6, 6],
-                            label: {
-                                content: 'Mesai Bitişi (17:30)',
-                                display: true,
-                                position: 'end', // Etiketi sağa alalım
-                                backgroundColor: 'rgba(255, 99, 132, 0.8)',
-                                color: 'white',
-                                font: { weight: 'bold' }
-                            }
-                        }
-                    }
-                }
-            ,
-            }
-        }
-    });
-}
 
 
 function populateGunSecici(tarihler) {
-    gunSeciciSelect.innerHTML = '<option value="">Tarih Seçin...</option>'; 
+    gunSeciciSelect.innerHTML = '<option value="">Tarih Seçin...</option>';
     tarihler.forEach((tarih, index) => {
         const option = document.createElement('option');
         option.value = index;
@@ -514,16 +616,16 @@ function populateGunSecici(tarihler) {
 function handleGunSeciciChange() {
     const selectedIndex = parseInt(gunSeciciSelect.value);
 
-    if (isNaN(selectedIndex)) { 
-        mesaiChart.setActiveElements([]); 
+    if (isNaN(selectedIndex)) {
+        mesaiChart.setActiveElements([]);
         mesaiChart.update();
         return;
     }
 
-   
+
     displayDailyDetails(currentPersonApiData[selectedIndex]);
 
-  
+
     mesaiChart.setActiveElements([{ datasetIndex: 0, index: selectedIndex }]);
     mesaiChart.update();
 }
@@ -557,7 +659,7 @@ function personelleriGetir() {
             const userIdFromUrl = params.get('UserID');
 
 
-     
+
 
             if (userIdFromUrl) {
                 // Not: UserID'ler string veya number olabilir, gevşek karşılaştırma (==) kullanalım.
@@ -643,14 +745,14 @@ function applyFilters() {
 
 //gunSeciciSelect.addEventListener('change', handleGunSeciciChange);
 function renderPersonnelList(personnel) {
-    personelListesi.innerHTML = ''; 
+    personelListesi.innerHTML = '';
 
     if (!personnel || personnel.length === 0) {
         personelListesi.innerHTML = '<li>Sonuç bulunamadı.</li>';
         return;
     }
 
-  
+
     const placeholderImage = `
         <svg class="personel-foto" xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="#6c757d" viewBox="0 0 16 16">
             <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
@@ -666,13 +768,13 @@ function renderPersonnelList(personnel) {
 
         let imageHtml = placeholderImage;
         if (fotoBase64) {
-           
+
             imageHtml = `<img src="data:image/jpeg;base64,${fotoBase64}" alt="${ad} ${soyad}" class="personel-foto">`;
         }
 
-      
 
-      
+
+
         li.innerHTML = `${imageHtml} <span>${ad} ${soyad}</span>`;
         li.onclick = () => kisiSecildi(userId, `${ad} ${soyad}`, li);
         personelListesi.appendChild(li);
@@ -753,13 +855,13 @@ async function fetchAndDisplayPersonelInfo(userId) {
             <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
         </svg>`;
 
-        
-            
 
-            let imageHtml = placeholderImage;
-            if (fotoBase64) {
-                imageHtml = `<img src="data:image/jpeg;base64,${fotoBase64}" alt="${ad} ${soyad}" class="personel-info-foto">`;
-            }
+
+
+        let imageHtml = placeholderImage;
+        if (fotoBase64) {
+            imageHtml = `<img src="data:image/jpeg;base64,${fotoBase64}" alt="${ad} ${soyad}" class="personel-info-foto">`;
+        }
 
         userId = parseInt(userId);
         const infoHtml = `
@@ -792,20 +894,20 @@ function kisiSecildi(userId, adSoyad, clickedListItem) {
     if (clickedListItem) clickedListItem.classList.add('selected');
 
 
-    chartsSectionContainer.style.display = 'flex'; 
+    chartsSectionContainer.style.display = 'flex';
     fetchAndDisplayPersonelInfo(userId);
 
     kisiDetayBaslik.textContent = `${adSoyad} - Mesai Detayları`;
-   // gunlukDetayKutusu.innerHTML = 'Veriler yükleniyor...';
+    // gunlukDetayKutusu.innerHTML = 'Veriler yükleniyor...';
 
     kisiDetayBaslik.style.display = 'block';
-   // gunlukDetayKutusu.style.display = 'block';
+    // gunlukDetayKutusu.style.display = 'block';
     personelInfoKarti.style.display = 'flex';
-   // anaGrafikAlani.style.display = 'flex';
+    // anaGrafikAlani.style.display = 'flex';
 
     if (mesaiChart) mesaiChart.destroy();
     if (durumChart) durumChart.destroy();
-   // gunSeciciSelect.innerHTML = '<option value="">Yükleniyor...</option>';
+    // gunSeciciSelect.innerHTML = '<option value="">Yükleniyor...</option>';
 
 
     fetch(`/api/data/mesai/${userId}`)
@@ -815,9 +917,9 @@ function kisiSecildi(userId, adSoyad, clickedListItem) {
             if (apiData.length === 0) {
 
 
-                chartsSectionContainer.style.display = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!'; 
+                chartsSectionContainer.style.display = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!';
                 personelInfoKarti.style.display = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!';
-             //   anaGrafikAlani.style.display = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!';
+                //   anaGrafikAlani.style.display = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!';
                 return;
             }
 
@@ -825,20 +927,20 @@ function kisiSecildi(userId, adSoyad, clickedListItem) {
             donutChartContainer.style.display = 'block';
 
             const processedData = processChartData(apiData);
-            
+
             createAdvancedBarChart(apiData); // Yeni Gantt grafiğini başlatır
             createDoughnutChart(processChartData(apiData).donutData); // Pasta grafik aynı kalabilir
 
         })
         .catch(error => {
             console.error('Mesai detayı alınırken hata:', error);
-           // gunlukDetayKutusu.innerHTML = 'Mesai verileri yüklenirken bir hata oluştu.';
+            // gunlukDetayKutusu.innerHTML = 'Mesai verileri yüklenirken bir hata oluştu.';
         });
 
 
 
 
-    
+
     kisiDetayBaslik.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
 }
@@ -883,10 +985,10 @@ function processChartData(apiData) {
 
         if (isCalismaSuresiEksik) {
             donutData.sadece_eksik++;
-            
+
         } else {
             donutData.tam_mesai++;
-        } 
+        }
     });
     return { barData, donutData };
 }
@@ -1175,7 +1277,6 @@ async function exportChartDataToExcel() {
         saveAs(new Blob([buffer]), `${adSoyad} Mesai Raporu.xlsx`);
     });
 }
-
 
 
 

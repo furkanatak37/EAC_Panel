@@ -352,6 +352,10 @@ function renderErkenCikanlarRaporu(data, baslangic, bitis) {
             <th>Alt Firma</th>
             <th>Çıkış Saati</th>
             <th>Erken Çıkış Süresi</th>
+        <th>Giriş Terminal</th>
+           <th>Çıkış Terminal</th>
+
+
         </tr>`;
 
     const tabloGovdesi = document.getElementById('rapor-tablo-govdesi');
@@ -399,13 +403,15 @@ function renderErkenCikanlarRaporu(data, baslangic, bitis) {
         tr.innerHTML = `
             <td>${new Date(p.tarih || p.Tarih).toLocaleDateString('tr-TR')}</td>
             <td>${p.sicilID || p.SicilID || 'N/A'}</td>
-            <td>${p.ad || p.Ad} ${p.soyad || p.Soyad}</td>
-            <td>${p.personelNo || p.PersonelNo || 'N/A'}</td>
+    <td> <a href="index.html?UserID=${p.userID}" target="_blank"> ${p.ad} ${p.soyad} </a> </td>
+    <td>${p.personelNo || p.PersonelNo || 'N/A'}</td>
             <td>${p.departman || p.Departman || 'N/A'}</td>
             <td>${p.firma || p.Firma || 'N/A'}</td>
             <td>${p.altFirma || p.AltFirma || 'N/A'}</td>
             <td>${cikisSaati.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</td>
             <td>${erkenCikisSuresiMetni}</td>
+               <td>${p.girisTerminal || 'N/A'}</td>
+              <td>${p.cikisTerminal || 'N/A'}</td>
         `;
         tabloGovdesi.appendChild(tr);
     });
@@ -492,6 +498,8 @@ function renderGecGelenlerRaporu(data, baslangic, bitis) {
             <th>Alt Firma</th>
             <th>Giriş Saati</th>
             <th>Gecikme Süresi</th>
+            <th>Giriş Terminal</th>
+           <th>Çıkış Terminal</th>
         </tr>`;
 
     const tabloGovdesi = document.getElementById('rapor-tablo-govdesi');
@@ -539,13 +547,15 @@ function renderGecGelenlerRaporu(data, baslangic, bitis) {
         tr.innerHTML = `
             <td>${new Date(p.tarih || p.Tarih).toLocaleDateString('tr-TR')}</td>
             <td>${p.sicilID || p.SicilID}</td>
-            <td>${p.ad || p.Ad} ${p.soyad || p.Soyad}</td>
-            <td>${p.personelNo || p.PersonelNo}</td>
+    <td> <a href="index.html?UserID=${p.userID}" target="_blank"> ${p.ad} ${p.soyad} </a> </td>
+    <td>${p.personelNo || p.PersonelNo}</td>
             <td>${p.departman || p.Departman || 'N/A'}</td>
             <td>${p.firma || p.Firma || 'N/A'}</td>
             <td>${p.altFirma || p.AltFirma || 'N/A'}</td>
             <td>${girisSaati.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</td>
             <td>${gecikmeSuresiMetni}</td>
+               <td>${p.girisTerminal || 'N/A'}</td>
+              <td>${p.cikisTerminal || 'N/A'}</td>
         `;
         tabloGovdesi.appendChild(tr);
     });
@@ -563,7 +573,7 @@ function renderFazlaMesaiRaporu(data, baslangic, bitis) {
     document.getElementById('rapor-tablo-baslik').innerHTML = `
         <tr>
             <th>Tarih</th>
-            <th>Sicil ID</th>
+            <th>Sicil NO</th>
             <th>Ad Soyad</th>
             <th>Personel No</th>
             <th>Departman</th>
@@ -571,6 +581,8 @@ function renderFazlaMesaiRaporu(data, baslangic, bitis) {
             <th>Alt Firma</th>
             <th>Çıkış Saati</th>
             <th>Fazla Mesai Süresi</th>
+            <th>Giriş Terminal</th>
+           <th>Çıkış Terminal</th>
         </tr>`;
 
     const tabloGovdesi = document.getElementById('rapor-tablo-govdesi');
@@ -622,13 +634,15 @@ function renderFazlaMesaiRaporu(data, baslangic, bitis) {
         tr.innerHTML = `
             <td>${new Date(p.tarih || p.Tarih).toLocaleDateString('tr-TR')}</td>
             <td>${p.sicilID || p.SicilID || 'N/A'}</td>
-            <td>${p.ad || p.Ad} ${p.soyad || p.Soyad}</td>
+             <td> <a href="index.html?UserID=${p.userID}" target="_blank"> ${p.ad} ${p.soyad} </a> </td>
             <td>${p.personelNo || p.PersonelNo || 'N/A'}</td>
             <td>${p.departman || p.Departman || 'N/A'}</td>
             <td>${p.firma || p.Firma || 'N/A'}</td>
             <td>${p.altFirma || p.AltFirma || 'N/A'}</td>
             <td>${cikisSaati.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</td>
             <td>+${mesaiSuresiMetni.trim()}</td>
+               <td>${p.girisTerminal || 'N/A'}</td>
+              <td>${p.cikisTerminal || 'N/A'}</td>
         `;
         tabloGovdesi.appendChild(tr);
     });
@@ -650,14 +664,17 @@ function renderEksikMesaiRaporu(data, baslangic, bitis) {
     document.getElementById('rapor-tablo-baslik').innerHTML = `
         <tr>
             <th>Tarih</th>
-            <th>Sicil ID</th>
+            <th>Sicil No</th>
             <th>Ad Soyad</th>
-         
+            <th>Personel NO</th>
             <th>Departman</th>
             <th>Firma</th>
             <th>Alt Firma</th>
             <th>Toplam Çalışma süresi</th>
             <th>Durum</th>
+             <th>Giriş Terminal</th>
+            <th>Çıkış Terminal</th>
+
         </tr>`;
 
     if (!data || data.length === 0) {
@@ -685,6 +702,11 @@ function renderEksikMesaiRaporu(data, baslangic, bitis) {
         if (durumSirasiA < durumSirasiB) return -1;
         if (durumSirasiA > durumSirasiB) return 1;
 
+        const sureA = a.toplamMesaiDakika || 0;
+        const sureB = b.toplamMesaiDakika || 0;
+        if (sureA < sureB) return -1;
+        if (sureA > sureB) return 1;
+        // ================================
         // 3. Aşama (Opsiyonel): Eğer durumlar da aynıysa isme göre sırala
         const adSoyadA = `${a.ad} ${a.soyad}`;
         const adSoyadB = `${b.ad} ${b.soyad}`;
@@ -709,13 +731,18 @@ function renderEksikMesaiRaporu(data, baslangic, bitis) {
 
         tr.innerHTML = `
             <td>${new Date(p.tarih).toLocaleDateString('tr-TR')}</td>
-            <td>${p.sicilID}</td>
+            <td>${p.sicilNo}</td>
             <td> <a href="index.html?UserID=${p.userID}" target="_blank"> ${p.ad} ${p.soyad} </a> </td>
+            <td>${p.personelNo || 'N/A'}</td>
             <td>${p.departman || 'N/A'}</td>
             <td>${p.firma || 'N/A'}</td>
             <td>${p.altFirma || 'N/A'}</td>
             <td>${durum.includes('Devamsız') ? '-' : `${saat} saat ${dakika} dk`}</td>
             <td>${durum}</td>
+          <td>${p.girisTerminal || 'N/A'}</td>
+              <td>${p.cikisTerminal || 'N/A'}</td>
+
+
         `;
         tabloGovdesi.appendChild(tr);
     });
@@ -739,17 +766,76 @@ function renderEksikMesaiRaporu(data, baslangic, bitis) {
 
 
 
-function exportTableToExcel() {
-    const table = document.getElementById("rapor-tablosu");
-    if (!table) {
-        alert("Aktarılacak tablo bulunamadı!");
+// raporlar.js dosyanızdaki bu fonksiyonu değiştirin
+
+/**
+ * HTML tablosundaki veriyi ve satır renklerini koruyarak Excel dosyası oluşturur.
+ */
+async function exportTableToExcel() {
+    const tabloBaslik = document.getElementById('rapor-tablo-baslik');
+    const tabloGovdesi = document.getElementById('rapor-tablo-govdesi');
+    const raporAdi = document.getElementById('rapor-baslik').textContent;
+
+    if (tabloGovdesi.rows.length === 0 || tabloGovdesi.rows[0].cells[0].colSpan > 1) {
+        alert("Aktarılacak veri bulunamadı!");
         return;
     }
-    const workbook = XLSX.utils.table_to_book(table, { sheet: "Rapor" });
-    const raporBaslik = document.getElementById('rapor-baslik').textContent;
-    XLSX.writeFile(workbook, `${raporBaslik}.xlsx`);
-}
 
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Rapor');
+
+    // Başlık Ekleme
+    const anaBaslik = worksheet.addRow([raporAdi]);
+    anaBaslik.font = { size: 16, bold: true };
+    worksheet.mergeCells(`A1:${String.fromCharCode(64 + tabloBaslik.rows[0].cells.length)}1`);
+    worksheet.addRow([]); // Boş satır
+
+    // Sütun Başlıklarını Ekleme ve Stillendirme
+    const headerRowData = Array.from(tabloBaslik.querySelectorAll('th')).map(th => th.innerText);
+    const headerRow = worksheet.addRow(headerRowData);
+    headerRow.eachCell((cell) => {
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF495057' } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
+    });
+
+    // Veri Satırlarını ve Koşullu Renkleri Ekleme
+    Array.from(tabloGovdesi.rows).forEach(tableRow => {
+        const rowData = Array.from(tableRow.cells).map(cell => cell.innerText);
+        const row = worksheet.addRow(rowData);
+
+        // Satırın CSS sınıfına göre rengini belirle
+        let fillColor = null;
+        if (tableRow.classList.contains('kritik-gecikme') || tableRow.classList.contains('onemli-mesai')) {
+            fillColor = 'FFFFEBEE'; // Açık Kırmızı
+        } else if (tableRow.classList.contains('devamsiz-gun')) {
+            fillColor = 'FFF1F3F5'; // Açık Gri
+        } else if (tableRow.classList.contains('izinli-gun')) {
+            fillColor = 'FFE7F1FF'; // Açık Mavi
+        }
+
+        if (fillColor) {
+            row.eachCell((cell) => {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillColor } };
+            });
+        }
+    });
+
+    // Sütun Genişliklerini Ayarla
+    worksheet.columns.forEach(column => {
+        let maxLen = 0;
+        column.eachCell({ includeEmpty: true }, (cell) => {
+            maxLen = Math.max(maxLen, cell.value ? cell.value.toString().length : 0);
+        });
+        column.width = maxLen < 15 ? 15 : maxLen + 2;
+    });
+
+    // Dosyayı Oluştur ve İndir
+    workbook.xlsx.writeBuffer().then((buffer) => {
+        saveAs(new Blob([buffer]), `${raporAdi}.xlsx`);
+    });
+}
 function exportPageToPdf() {
     const raporBaslik = document.getElementById('rapor-baslik').textContent;
     const element = document.querySelector(".container");

@@ -2755,7 +2755,39 @@ body.modal-open {
 
 /* Rapor tablosundaki izinli satırlarını mavi yapar */
 .detay-tablosu tr.izinli-gun {
-    background-color: #e7f1ff; /* Açık mavi */
-    color: #0a58ca; /* Koyu mavi yazı */
+    background-color: rgb(10, 176, 230, 0.70); /* Açık mavi */
+    color: #0062df; /* Koyu mavi yazı */
 }
-/* Mevcut devamsız ve kritik gecikme stilleriniz kalabilir */
+/* style.css dosyanızın sonuna ekleyin */
+
+/* ==========================================================================
+   GRAFİK GÖSTERGE (LEGEND) STİLLERİ
+   ========================================================================== */
+
+.chart-legend {
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Gösterge elemanları arası boşluk */
+    padding: 5px 10px;
+    background-color: #e9ecef;
+    border-radius: 6px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Renk kutusu ve metin arası boşluk */
+}
+
+.legend-color-box {
+    width: 15px;
+    height: 15px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.legend-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #495057;
+}
