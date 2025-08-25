@@ -311,22 +311,6 @@
   },
   {
     "ContainingType": "WebApplication1.Controllers.DataController",
-    "Method": "GetinfoDetay",
-    "RelativePath": "api/Data/getinfoDetay/{userId}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "userId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "WebApplication1.Controllers.DataController",
     "Method": "GetInfo",
     "RelativePath": "api/Data/getIzin/{userId}",
     "HttpMethod": "GET",

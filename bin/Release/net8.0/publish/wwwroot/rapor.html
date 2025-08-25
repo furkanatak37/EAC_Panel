@@ -1,0 +1,102 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detaylı Rapor</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+</head>
+<body>
+    <header class="page-header">
+        <a href="index.html" class="geri-don-butonu">&larr; Ana Sayfaya Dön</a>
+        <h1>PDKS Mesai Takip Paneli</h1>
+
+        <a href="index.html">
+            <img src="assets/tp-otc.png" alt="Şirket Logosu" class="logo">
+        </a>
+    </header>
+
+    <main class="container report-page-container">
+        <div class="sticky-rapor-header">
+
+            <div class="rapor-sayfasi-header">
+                <div class="rapor-header-sol">
+      
+                    <h2 class="rapor-baslik" id="rapor-baslik">Rapor Yükleniyor...</h2>
+
+                </div>
+                <div class="buton-grup">
+                    <button id="excel-aktar-btn" class="rapor-butonu excel">
+
+                        <span>Excel'e Aktar</span>
+                    </button>
+
+                    <button id="pdf-kaydet-btn" class="rapor-butonu pdf">
+
+                        <span>PDF Olarak Kaydet</span>
+                    </button>
+                    <a href="index.html" class="geri-don-butonu">&larr; Ana Panele Dön</a>
+                </div>
+            </div>
+
+            <div class="rapor-kontrolleri">
+                <div class="filtre-grubu">
+                    <div class="tarih-araligi-secici">
+                        <label>Tarih Aralığı:</label>
+                        <input type="date" id="baslangicTarih">
+                        <span>-</span>
+                        <input type="date" id="bitisTarih">
+                    </div>
+                    <div class="opsiyonel-filtreler">
+                        <select id="firmaFiltre">
+                            <option value="">Firma Seçin...</option>
+                        </select>
+                        <select id="altfirmaFiltre" disabled>
+                            <option value="">Tüm Alt Firmalar</option>
+                        </select>
+                        <select id="departmanFiltre" disabled>
+                            <option value="">Tüm Departmanlar</option>
+                        </select>
+
+                        <select id="durumFiltre" style="display: none;">
+                            <option value="">Tüm Durumlar</option>
+                            <option value="Eksik Mesai">Sadece Eksik Mesai</option>
+                            <option value="Devamsız">Sadece Devamsızlar</option>
+                            <option value="(İzinli">Sadece İzinliler</option>
+
+
+                        </select>
+                    </div>
+                    <button id="raporOlusturBtn" class="rapor-butonu">Raporu Görüntüle</button>
+
+                    <button id="rapor-filtre-temizle-btn" class="temizle-btn">Filtreleri Temizle</button>
+
+
+
+                </div>
+
+                <div class="aksiyon-grubu">
+
+
+                </div>
+                <div id="rapor-kayit-sayaci" class="kayit-sayaci"></div>
+            </div>
+        </div>
+            <div class="table-wrapper">
+                <table class="detay-tablosu" id="rapor-tablosu">
+                    <thead id="rapor-tablo-baslik">
+                    </thead>
+                    <tbody id="rapor-tablo-govdesi">
+                        <tr><td colspan="5">Raporu görüntülemek için tarih aralığı seçip butona basın.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+    </main>
+
+    <script src="js/rapor.js" defer></script>
+</body>
+</html>

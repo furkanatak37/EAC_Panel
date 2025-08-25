@@ -1,0 +1,116 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDKS Mesai Takip Paneli</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/2.2.1/chartjs-plugin-annotation.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+</head>
+
+<body>
+
+    <header class="page-header">
+        <img src="assets/tp-otc.png" alt="Şirket Logosu" class="logo">
+        <h1>PDKS Mesai Takip Paneli</h1>
+    </header>
+
+    <main class="container">
+        <div class="dashboard-layout">
+
+
+            <div class="reports-section">
+                <div class="rapor-header">
+                    <div class="rapor-header-sol">
+
+                        <h2 id="detayBaslik">Tarih Aralığı Raporları</h2>
+
+
+
+
+
+
+
+                    </div>
+                    <div class="tarih-araligi-secici">
+                        <label for="baslangicTarih">Başlangıç:</label>
+                        <input type="date" id="baslangicTarih">
+                        <label for="bitisTarih">Bitiş:</label>
+                        <input type="date" id="bitisTarih">
+                        <button id="raporOlusturBtn" class="rapor-butonu">Raporla</button>
+                    </div>
+                </div>
+
+                <div class="rapor-paneli">
+                    <div class="rapor-sekmeleri">
+                        <button class="sekme-buton aktif" data-rapor="gec-gelenler">Geç Gelenler</button>
+                        <button class="sekme-buton" data-rapor="erken-cikanlar">Erken Çıkanlar</button>
+                        <button class="sekme-buton" data-rapor="fazla-mesai">Fazla Mesai</button>
+                        <button class="sekme-buton" data-rapor="gelmeyenler">Devamsızlar</button>
+                        <button class="sekme-buton" data-rapor="departman-analizi">Departman Analizi</button>
+                        <button class="sekme-buton" data-rapor="izinliler">İzinliler</button>
+                        <button class="sekme-buton" data-rapor="gunun-enleri">Aralığın En'leri</button>
+                    </div>
+
+                    <div class="rapor-icerik">
+                        <div id="rapor-gec-gelenler" class="rapor-icerik-alani aktif">
+                            <ul id="gec-gelenler-listesi"></ul>
+                            <a href="#" id="gec-gelenler-detay-btn" class="kart-detay-link" target="_blank">Detaylı Rapor &rarr;</a>
+                        </div>
+                        <div id="rapor-erken-cikanlar" class="rapor-icerik-alani">
+                            <ul id="erken-cikanlar-listesi"></ul>
+                            <a href="#" id="erken-cikanlar-detay-btn" class="kart-detay-link" target="_blank">Detaylı Rapor &rarr;</a>
+                        </div>
+                        <div id="rapor-fazla-mesai" class="rapor-icerik-alani">
+                            <ul id="fazla-mesai-listesi"></ul>
+                            <a href="#" id="fazla-mesai-detay-btn" class="kart-detay-link" target="_blank">Detaylı Rapor &rarr;</a>
+                        </div>
+                        <div id="rapor-devamsizlar" class="rapor-icerik-alani">
+                            <ul id="devamsizlar-listesi"></ul>
+                            <a href="#" id="devamsizlar-detay-btn" class="kart-detay-link" target="_blank">Detaylı Rapor &rarr;</a>
+                        </div>
+
+                        <div id="rapor-gelmeyenler" class="rapor-icerik-alani">
+                            <ul id="gelmeyenler-listesi"></ul>
+                            <a href="#" id="gelmeyenler-detay-btn" class="kart-detay-link" target="_blank">Detaylı Rapor &rarr;</a>
+                        </div>
+                        <div id="rapor-izinliler" class="rapor-icerik-alani">
+                            <div id="izinliler-listesi"></div>
+                        </div>
+                        <div id="rapor-departman-analizi" class="rapor-icerik-alani">
+                            <div id="departman-analiz-icerik"></div>
+                            <a href="#" id="departman-detay-btn" class="kart-detay-link" target="_blank">Detaylı Rapor &rarr;</a>
+                        </div>
+                        <div id="rapor-gunun-enleri" class="rapor-icerik-alani">
+                            <div id="gunun-enleri-icerik"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </main>
+
+
+
+
+    <script src="js/raporlar.js" defer></script>
+
+
+
+    <div class="modal" id="detay-modal">
+        <div class="modal-overlay" data-close-modal></div>
+        <div class="modal-content">
+            <button class="modal-close" data-close-modal>&times;</button>
+            <div id="detay-modal-body">
+            </div>
+        </div>
+    </div>
+
+
+
+</body>
+</html>

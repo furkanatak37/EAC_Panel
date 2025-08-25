@@ -1,0 +1,187 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDKS Mesai Takip Paneli</title>
+    <link rel="stylesheet" href="css/style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+</head>
+
+<body>
+
+    <header class="page-header">
+        <div class="header-left">
+            <div class="dropdown">
+                <button id="raporlar-btn" class="dropbtn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5H12v12h2V2z" /></svg>
+                    <span>Raporlar</span>
+                </button>
+                <div id="raporlar-dropdown-icerik" class="dropdown-content">
+
+
+
+                    <a href="rapor.html?rapor=eksik-mesai-yeni">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z" /><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z" /></svg>
+
+                        <span>Eksik Mesai & Devamsızlık</span>
+                    </a> 
+
+                    <a href="rapor.html?rapor=gec">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z" /></svg>
+                        <span>Geç Kalanlar</span>
+                    </a>
+                    <a href="rapor.html?rapor=erken">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z" /></svg>
+                        <span>Erken Çıkanlar</span>
+                    </a>
+                    <a href="rapor.html?rapor=mesai">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" /></svg>
+                        <span>Fazla Mesai</span>
+                    </a>
+
+                    <!--
+    <a href="rapor.html?rapor=devamsizlik">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z" /></svg>
+        <span>Devamsızlar</span>
+    </a>
+
+    -->
+
+                    <a href="rapor.html?rapor=izinliler">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar2-check" viewBox="0 0 16 16"><path d="M10.854 8.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 10.793l2.646-2.647a.5.5 0 0 1 .708 0z" /><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM2 2a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H2z" /><path d="M2.5 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5V4z" /></svg>
+                        <span>İzinliler</span>
+                    </a>
+
+
+
+                    <a href="rapor.html?rapor=departman">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M16 12.5a.5.5 0 0 1-.5.5h-15a.5.5 0 0 1 0-1h15a.5.5 0 0 1 .5.5zM16 4.5a.5.5 0 0 1-.5.5h-15a.5.5 0 0 1 0-1h15a.5.5 0 0 1 .5.5z" /><path d="M2 13a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-2zM6 3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V3zm5 4a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1V7z" /></svg>
+                        <span>Departman Analizi</span>
+                    </a>
+
+                </div>
+            </div>
+        </div>
+
+        <h1>PDKS Mesai Takip Paneli</h1>
+
+        <div class="header-right">
+            <a href="index.html">
+                <img src="assets/tp-otc.png" alt="Şirket Logosu" class="logo">
+            </a>
+        </div>
+    </header>
+
+
+    <main class="container">
+        <div class="dashboard-layout">
+            <div class="sidebar">
+                <h2>Kişi Listesi</h2>
+                <div class="filter-controls">
+                    <input type="text" id="adFiltre" placeholder="Ada göre filtrele...">
+                    <select id="firmaFiltre">
+                        <option value="">Firma Seçiniz...</option>
+                    </select>
+                    <select id="altfirmaFiltre" disabled>
+
+                        <option value="">Tüm Alt Firmalar</option>
+                    </select>
+                    <select id="departmanFiltre" disabled>
+                        <option value="">Tüm Departmanlar</option>
+                    </select>
+                </div>
+                <ul id="personelListesi"></ul>
+                <div class="kart" id="personel-info-karti">
+                    <h3><span class="kart-ikon">ℹ️</span>Personel Bilgileri</h3>
+                    <div id="personel-info-icerik"></div>
+                </div>
+            </div>
+
+            <div class="charts-section" id="charts-section-container" style="display:none;">
+                
+                <h2 class="chart-header" id="kisiDetayBaslik">Kişi Mesai Detayları</h2>
+
+                <div class="grafik-paneli">
+                    <div class="grafik-sekmeleri">
+                        <button class="sekme-buton aktif" data-grafik="gunluk-mesai">Günlük Mesai Süreleri</button>
+                        <button class="sekme-buton" data-grafik="mesai-dagilimi">Mesai Durum Dağılımı</button>
+                    </div>
+
+                    <div class="grafik-icerik">
+                        <div id="grafik-gunluk-mesai" class="grafik-icerik-alani aktif">
+                            <div class="chart-container" id="barChartContainer">
+                           
+
+                                <div class="gantt-chart-controls">
+                                    <div class="gantt-tarih-araligi">
+                                        <label for="grafikBaslangic">Başlangıç:</label>
+                                        <input type="date" id="grafikBaslangic">
+                                        <label for="grafikBitis">Bitiş:</label>
+                                        <input type="date" id="grafikBitis">
+                                    </div>
+
+                                    <div class="chart-legend">
+                                        <div class="legend-item">
+                                            <span class="legend-color-box" style="background-color: rgba(40, 167, 69, 0.7);"></span>
+                                            <span class="legend-label">Tam Mesai</span>
+                                        </div>
+                                        <div class="legend-item">
+                                            <span class="legend-color-box" style="background-color: rgba(220, 53, 69, 0.7);"></span>
+                                            <span class="legend-label">Eksik Mesai</span>
+                                        </div>
+                                        <div class="legend-item">
+                                            <span class="legend-color-box" style="background-color: rgb(14, 159, 243, 0.78);"></span>
+                                            <span class="legend-label">İzinli Gün</span>
+                                        </div>
+                                    </div>
+                                    <label><input type="checkbox" id="eksikMesaiFiltre" value="eksik"> Eksik Mesai Yapılmış Günler</label>
+                               
+                                    <button id="grafik-excel-btn" class="rapor-butonu excel">Excele Aktar</button>
+                                </div>
+
+                                <div id="grafik-ozet-kutusu" class="grafik-ozet-kutusu"></div>
+
+
+                                <canvas id="mesaiChart"></canvas>
+
+                            </div>
+                        </div>
+
+                        <div id="grafik-mesai-dagilimi" class="grafik-icerik-alani">
+                            <div class="chart-container" id="donutChartContainer">
+                            
+                                    <canvas id="durumChart"></canvas>
+                               
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+
+    <script src="js/script.js" defer></script>
+    <div class="modal" id="info-modal">
+        <div class="modal-overlay" data-close-modal></div>
+        <div class="modal-content">
+            <button class="modal-close" data-close-modal>&times;</button>
+            <div id="modal-body-content">
+            </div>
+        </div>
+    </div>
+
+
+
+</body>
+</html>

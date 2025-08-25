@@ -1,4 +1,51 @@
-﻿const gununEnleriIcerik = document.getElementById('gunun-enleri-icerik');
+﻿//eskii dosya aktif değil
+
+
+
+//===================================================================
+//Muhammed Furkan Atak
+//furkanatak.work@gmail.com
+//05362058576
+//tarih : 08/25/25
+//===================================================================
+
+
+
+
+
+
+
+
+
+//============================================================================
+//eskii dosya aktif değil
+//============================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const gununEnleriIcerik = document.getElementById('gunun-enleri-icerik');
 const izinlilerListesi = document.getElementById('izinliler-listesi');
 
 const gecGelenlerListesi = document.getElementById('gec-gelenler-listesi');

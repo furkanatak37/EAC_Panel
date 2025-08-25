@@ -17,7 +17,7 @@
     const kayitSayaci = document.getElementById('rapor-kayit-sayaci');
 
 
-    let personelFiltreHaritasi = []; // Tüm personel ilişkilerini tutacak
+    let personelFiltreHaritasi = []; 
 
     // === URL'den Gelen Parametreleri Oku ===
     const params = new URLSearchParams(window.location.search);
@@ -29,11 +29,9 @@
     pdfBtn.addEventListener('click', exportPageToPdf);
     firmaFiltre.addEventListener('change', firmaSecildi);
     altfirmaFiltre.addEventListener('change', altFirmaSecildi);
-    filtreTemizleBtn.addEventListener('click', clearReportFilters); // YENİ
+    filtreTemizleBtn.addEventListener('click', clearReportFilters); 
 
-    /**
-     * Filtre dropdown menülerini API'den gelen veriyle doldurur.
-     */
+    
     async function populateFilters() {
         try {
             const response = await fetch('/api/data/filtre-verileri');
@@ -61,7 +59,6 @@
     function firmaSecildi() {
         const seciliFirmaId = parseInt(firmaFiltre.value);
 
-        // Önce alt filtreleri sıfırla ve pasif yap
         altfirmaFiltre.innerHTML = '<option value="">Tüm Alt Firmalar</option>';
         altfirmaFiltre.disabled = true;
         departmanFiltre.innerHTML = '<option value="">Tüm Departmanlar</option>';
@@ -69,17 +66,14 @@
 
         if (!seciliFirmaId) return;
 
-        // Seçilen firmadaki personelleri bul
         const firmaPersonelleri = personelFiltreHaritasi.filter(p => p.firmaId === seciliFirmaId);
 
-        // Alt firmaları doldur ve aktifleştir
         const altFirmalar = [...new Map(firmaPersonelleri.map(p => [p.altFirmaId, { ID: p.altFirmaId, Ad: p.altFirmaAdi }])).values()];
-        if (altFirmalar.length > 1 || (altFirmalar.length === 1 && altFirmalar[0].ID)) { // Birden çok alt firma varsa veya tek ve geçerli bir alt firma varsa
+        if (altFirmalar.length > 1 || (altFirmalar.length === 1 && altFirmalar[0].ID)) { 
             populateSelect(altfirmaFiltre, altFirmalar.sort((a, b) => a.Ad.localeCompare(b.Ad)), "Tüm Alt Firmalar");
             altfirmaFiltre.disabled = false;
         }
 
-        // Departmanları doldur ve aktifleştir
         const departmanlar = [...new Map(firmaPersonelleri.map(p => [p.departmanId, { ID: p.departmanId, Ad: p.departmanAdi }])).values()];
         if (departmanlar.length > 0) {
             populateSelect(departmanFiltre, departmanlar.sort((a, b) => a.Ad.localeCompare(b.Ad)), "Tüm Departmanlar");
@@ -95,11 +89,10 @@
         if (!seciliFirmaId) return;
 
         let ilgiliPersoneller = personelFiltreHaritasi.filter(p => p.firmaId === seciliFirmaId);
-        if (seciliAltFirmaId) { // Eğer bir alt firma seçildiyse, ona göre de filtrele
+        if (seciliAltFirmaId) {
             ilgiliPersoneller = ilgiliPersoneller.filter(p => p.altFirmaId === seciliAltFirmaId);
         }
 
-        // Departmanları yeniden doldur
         const departmanlar = [...new Map(ilgiliPersoneller.map(p => [p.departmanId, { ID: p.departmanId, Ad: p.departmanAdi }])).values()];
         populateSelect(departmanFiltre, departmanlar.sort((a, b) => a.Ad.localeCompare(b.Ad)), "Tüm Departmanlar");
         departmanFiltre.disabled = false;
@@ -107,11 +100,9 @@
 
     async function initializeFilters() {
         try {
-            // Backend'den tüm personel/firma/departman ilişkilerini tek seferde çek
             const response = await fetch('/api/data/filtre-haritasi');
             personelFiltreHaritasi = await response.json();
 
-            // Sadece ana firma filtresini doldur
             const firmalar = [...new Map(personelFiltreHaritasi.map(p => [p.firmaId, { ID: p.firmaId, Ad: p.firmaAdi }])).values()];
             populateSelect(firmaFiltre, firmalar.sort((a, b) => a.Ad.localeCompare(b.Ad)), "Firma Seçin...");
 
@@ -125,9 +116,7 @@
             selectElement.add(new Option(item.Ad, item.ID));
         });
     }
-    /**
-     * "Raporla" butonuna tıklandığında veya sayfa ilk yüklendiğinde çalışır.
-     */
+    
 
     const durumFiltre = document.getElementById('durumFiltre');
 
@@ -137,7 +126,7 @@
         const depId = departmanFiltre.value;
         const firmaId = firmaFiltre.value;
         const altFirmaId = altfirmaFiltre.value;
-        const durum = durumFiltre.value; // Yeni filtrenin değerini oku
+        const durum = durumFiltre.value; 
 
         if (!baslangic || !bitis || !raporTuru) {
             alert("Geçerli bir rapor türü veya tarih aralığı bulunamadı.");
@@ -147,7 +136,7 @@
         tabloGovdesi.innerHTML = '<tr><td colspan="5">Yükleniyor...</td></tr>';
 
         let apiUrl;
-        if (raporTuru === 'eksik-mesai-yeni') { // YENİ API ÇAĞRISI
+        if (raporTuru === 'eksik-mesai-yeni') {
             apiUrl = `/api/data/eksik-mesai-ve-devamsizlik-raporu?baslangic=${baslangic}&bitis=${bitis}`;
         }
         else if (raporTuru === 'departman') {
@@ -155,7 +144,7 @@
         } else if (raporTuru === 'devamsizlik') {
             apiUrl = `/api/data/getGelmeyenlerDetay?baslangic=${baslangic}&bitis=${bitis}`;
         }
-        else if (raporTuru === 'izinliler') { // YENİ API ÇAĞRISI
+        else if (raporTuru === 'izinliler') { 
             apiUrl = `/api/data/getIzinliler?baslangic=${baslangic}&bitis=${bitis}`;
         }
         
@@ -167,7 +156,7 @@
         if (depId) apiUrl += `&departmanId=${depId}`;
         if (firmaId) apiUrl += `&firmaId=${firmaId}`;
         if (altFirmaId) apiUrl += `&altFirmaId=${altFirmaId}`;
-        if (durum) apiUrl += `&durumFiltresi=${durum}`; // Yeni durumu URL'e ekle
+        if (durum) apiUrl += `&durumFiltresi=${durum}`; 
 
         fetch(apiUrl)
             .then(response => response.json())
@@ -186,7 +175,7 @@
                 else if (raporTuru === 'izinliler') {
                     renderIzinlilerRaporu(data, baslangic, bitis);
                 }
-                 else if (raporTuru === 'eksik-mesai-yeni') { // YENİ RENDER ÇAĞRISI
+                 else if (raporTuru === 'eksik-mesai-yeni') { 
                     renderEksikMesaiRaporu(data, baslangic, bitis);
                 }
                 updateRowCount();
@@ -195,7 +184,7 @@
             .catch(error => {
                 console.error('Rapor oluşturulurken hata:', error);
                 tabloGovdesi.innerHTML = '<tr><td colspan="5">Rapor oluşturulurken bir hata oluştu.</td></tr>';
-                updateRowCount(); // Hata durumunda da sayacı sıfırla
+                updateRowCount(); 
 
             });
     }
@@ -203,27 +192,22 @@
 
 
     function clearReportFilters() {
-        // Ana firma filtresini sıfırla
         firmaFiltre.selectedIndex = 0;
-        // Bu, zincirleme olarak diğer filtreleri de sıfırlayacak olan 'change' olayını tetikler.
         firmaFiltre.dispatchEvent(new Event('change'));
-        // Tabloyu ve sayacı başlangıç durumuna getir
         setInitialReportState(raporTuru);
         kayitSayaci.textContent = '';
     }
 
-    /**
-     * Sayfa ilk açıldığında rapor türüne göre başlığı ve boş tabloyu ayarlar.
-     */
+   
     function setInitialReportState(raporTuru) {
         let baslik = "Detaylı Rapor";
-        let ustMenuHtml = '<tr><th>Veri</th></tr>'; // Varsayılan
+        let ustMenuHtml = '<tr><th>Veri</th></tr>'; 
         let colspan = 5;
         if (raporTuru === 'eksik-mesai-yeni') {
             baslik = "Eksik Mesai ve Devamsızlık Raporu";
             ustMenuHtml = `<tr><th>Tarih</th><th>UserID</th><th>Ad Soyad</th><th>Departman</th><th>Firma</th><th>Alt Firma</th><th>Toplam Süre</th><th>Durum</th></tr>`;
             colspan = 8;
-            durumFiltre.style.display = 'inline-block'; // Durum filtresini görünür yap
+            durumFiltre.style.display = 'inline-block'; 
         }
         else if (raporTuru === 'gec') {
             baslik = "Geç Gelenler Raporu";
@@ -251,34 +235,24 @@
         tabloGovdesi.innerHTML = `<tr><td colspan="${colspan}">Raporu görüntülemek için tarih aralığı seçip butona basın.</td></tr>`;
     }
 
-    /**
-     * Sayfanın ilk açılışını yönetir.
-     */
     async function initializeReportPage() {
         baslangicTarihInput.value = params.get('baslangic');
         bitisTarihInput.value = params.get('bitis');
 
-        setInitialReportState(raporTuru); // Önce başlıkları ve boş tabloyu ayarla
-        await populateFilters(); // Sonra filtre seçeneklerini doldur
-        // İlk raporu otomatik oluşturmak isterseniz aşağıdaki satırı aktif edebilirsiniz.
-        // raporOlustur(); 
+        setInitialReportState(raporTuru); 
+        await populateFilters(); 
     }
 
-    // Uygulamayı Başlat
     initializeReportPage();
     initializeFilters();
 });
 
 
-/**
- * Devamsızlık raporunu tabloya çizer.
- */
 function renderDevamsizlikRaporu(data, baslangic, bitis) {
     const formatliBaslangic = new Date(baslangic).toLocaleDateString('tr-TR');
     const formatliBitis = new Date(bitis).toLocaleDateString('tr-TR');
     document.getElementById('rapor-baslik').textContent = `Devamsızlık Raporu (${formatliBaslangic} - ${formatliBitis})`;
 
-    // DÜZELTME: "Pozisyon" başlığı eklendi
     document.getElementById('rapor-tablo-baslik').innerHTML = `
         <tr>
             <th>Tarih</th>
@@ -292,20 +266,17 @@ function renderDevamsizlikRaporu(data, baslangic, bitis) {
     tabloGovdesi.innerHTML = '';
 
     if (!data || data.length === 0) {
-        // DÜZELTME: Colspan 5 olarak güncellendi
         tabloGovdesi.innerHTML = '<tr><td colspan="5">Bu aralıkta devamsızlık yapan personel bulunamadı.</td></tr>';
         return;
     }
 
-    // Okunabilirlik için veriyi tarihe göre sıralayalım
     data.sort((a, b) => new Date(a.tarih || a.Tarih) - new Date(b.tarih || b.Tarih));
 
     data.forEach(p => {
         const tr = document.createElement('tr');
 
-        // YENİ: İletişim ikonlarını oluşturma mantığı
         const email = p.email || p.Email;
-        const tel = p.tel || p.cepTelefon; // Backend'den 'CepTelefon' olarak geliyor olabilir
+        const tel = p.tel || p.cepTelefon;
         let iletisimHtml = '';
         if (email && String(email).trim() !== '') {
             iletisimHtml += `
@@ -331,16 +302,12 @@ function renderDevamsizlikRaporu(data, baslangic, bitis) {
         tabloGovdesi.appendChild(tr);
     });
 }
-// raporlar.js dosyanızdaki bu fonksiyonu güncelleyin
-
-// raporlar.js dosyanızdaki bu fonksiyonu güncelleyin
 
 function renderErkenCikanlarRaporu(data, baslangic, bitis) {
     const formatliBaslangic = new Date(baslangic).toLocaleDateString('tr-TR');
     const formatliBitis = new Date(bitis).toLocaleDateString('tr-TR');
     document.getElementById('rapor-baslik').textContent = `Erken Çıkan Personel Raporu (${formatliBaslangic} - ${formatliBitis})`;
 
-    // DÜZELTME: Tablo başlığı yeni kolonları içerecek şekilde güncellendi
     document.getElementById('rapor-tablo-baslik').innerHTML = `
         <tr>
             <th>Tarih</th>
@@ -368,7 +335,6 @@ function renderErkenCikanlarRaporu(data, baslangic, bitis) {
 
     tabloGovdesi.innerHTML = '';
     if (erkenCikanlar.length === 0) {
-        // DÜZELTME: Colspan yeni sütun sayısına göre (9) güncellendi
         tabloGovdesi.innerHTML = '<tr><td colspan="9">Bu aralıkta erken çıkan personel bulunamadı.</td></tr>';
         return;
     }
@@ -399,7 +365,6 @@ function renderErkenCikanlarRaporu(data, baslangic, bitis) {
             erkenCikisSuresiMetni = `${erkenCikisDakika} dk`;
         }
 
-        // DÜZELTME: innerHTML tüm istenen kolonları içerecek şekilde güncellendi
         tr.innerHTML = `
             <td>${new Date(p.tarih || p.Tarih).toLocaleDateString('tr-TR')}</td>
             <td>${p.sicilID || p.SicilID || 'N/A'}</td>
@@ -453,7 +418,6 @@ function renderIzinlilerRaporu(data, baslangic, bitis) {
         tabloGovdesi.appendChild(tr);
     });
 }
-// === DİĞER RENDER FONKSİYONLARI ===
 
 function renderDepartmanRaporu(departmanOzetleri, baslangic, bitis) {
     const formatliBaslangic = new Date(baslangic).toLocaleDateString('tr-TR');
@@ -475,18 +439,12 @@ function renderDepartmanRaporu(departmanOzetleri, baslangic, bitis) {
     });
 }
 
-// rapor.js dosyanızdaki bu fonksiyonu değiştirin
-
-// raporlar.js dosyanızdaki bu fonksiyonu güncelleyin
-
-// raporlar.js dosyanızdaki bu fonksiyonu güncelleyin
 
 function renderGecGelenlerRaporu(data, baslangic, bitis) {
     const formatliBaslangic = new Date(baslangic).toLocaleDateString('tr-TR');
     const formatliBitis = new Date(bitis).toLocaleDateString('tr-TR');
     document.getElementById('rapor-baslik').textContent = `Geç Gelen Personel Raporu (${formatliBaslangic} - ${formatliBitis})`;
 
-    // YENİ: Tablo başlığı istediğiniz kolonları içerecek şekilde güncellendi
     document.getElementById('rapor-tablo-baslik').innerHTML = `
         <tr>
             <th>Tarih</th>
@@ -507,12 +465,10 @@ function renderGecGelenlerRaporu(data, baslangic, bitis) {
 
     tabloGovdesi.innerHTML = '';
     if (gecGelenler.length === 0) {
-        // Colspan yeni sütun sayısına göre güncellendi
         tabloGovdesi.innerHTML = '<tr><td colspan="9">Bu aralıkta geç kalan personel bulunamadı.</td></tr>';
         return;
     }
 
-    // Sıralama mantığı aynı kalabilir
     gecGelenler.sort((a, b) => {
         const tarihA = new Date(a.tarih || a.Tarih);
         const tarihB = new Date(b.tarih || b.Tarih);
@@ -543,7 +499,6 @@ function renderGecGelenlerRaporu(data, baslangic, bitis) {
             gecikmeSuresiMetni = `${gecikmeDakikasi} dk`;
         }
 
-        // YENİ: innerHTML tüm istenen kolonları içerecek şekilde güncellendi
         tr.innerHTML = `
             <td>${new Date(p.tarih || p.Tarih).toLocaleDateString('tr-TR')}</td>
             <td>${p.sicilID || p.SicilID}</td>
@@ -560,16 +515,12 @@ function renderGecGelenlerRaporu(data, baslangic, bitis) {
         tabloGovdesi.appendChild(tr);
     });
 }
-// raporlar.js dosyanızdaki bu fonksiyonu güncelleyin
-
-// raporlar.js dosyanızdaki bu fonksiyonu güncelleyin
 
 function renderFazlaMesaiRaporu(data, baslangic, bitis) {
     const formatliBaslangic = new Date(baslangic).toLocaleDateString('tr-TR');
     const formatliBitis = new Date(bitis).toLocaleDateString('tr-TR');
     document.getElementById('rapor-baslik').textContent = `Fazla Mesai Raporu (${formatliBaslangic} - ${formatliBitis})`;
 
-    // DÜZELTME: Tablo başlığı yeni kolonları içerecek şekilde güncellendi
     document.getElementById('rapor-tablo-baslik').innerHTML = `
         <tr>
             <th>Tarih</th>
@@ -595,7 +546,6 @@ function renderFazlaMesaiRaporu(data, baslangic, bitis) {
 
     tabloGovdesi.innerHTML = '';
     if (mesaiYapanlar.length === 0) {
-        // DÜZELTME: Colspan yeni sütun sayısına göre (9) güncellendi
         tabloGovdesi.innerHTML = '<tr><td colspan="9">Bu aralıkta fazla mesai yapan personel bulunamadı.</td></tr>';
         return;
     }
@@ -630,7 +580,6 @@ function renderFazlaMesaiRaporu(data, baslangic, bitis) {
             mesaiSuresiMetni = `${mesaiDakika} dk`;
         }
 
-        // DÜZELTME: innerHTML tüm istenen kolonları içerecek şekilde güncellendi
         tr.innerHTML = `
             <td>${new Date(p.tarih || p.Tarih).toLocaleDateString('tr-TR')}</td>
             <td>${p.sicilID || p.SicilID || 'N/A'}</td>
@@ -648,15 +597,6 @@ function renderFazlaMesaiRaporu(data, baslangic, bitis) {
     });
 }
 
-/**
- * Eksik Mesai ve Devamsızlık raporunu tabloya çizer.
- */
-// raporlar.js dosyanızın en altına ekleyin
-
-
-/**
- * Eksik Mesai ve Devamsızlık raporunu, gelişmiş sıralama ile tabloya çizer.
- */
 function renderEksikMesaiRaporu(data, baslangic, bitis) {
     const tabloGovdesi = document.getElementById('rapor-tablo-govdesi');
     tabloGovdesi.innerHTML = '';
@@ -684,19 +624,17 @@ function renderEksikMesaiRaporu(data, baslangic, bitis) {
 
     const getDurumSirasi = (durumStr) => {
         if (durumStr === 'Eksik Mesai') return 1;
-        if (durumStr.includes('izinli')) return 2; // Tüm izinli durumları 2. önceliğe alır
+        if (durumStr.includes('izinli')) return 2; 
         if (durumStr === 'Devamsız') return 3;
-        return 4; // Diğer durumlar için
+        return 4;
     };
 
     data.sort((a, b) => {
-        // 1. Aşama: Tarihe göre sırala (eskiden yeniye)
         const tarihA = new Date(a.tarih);
         const tarihB = new Date(b.tarih);
         if (tarihA < tarihB) return -1;
         if (tarihA > tarihB) return 1;
 
-        // 2. Aşama: Duruma göre sırala (Eksik Mesai -> İzinli -> Devamsız)
         const durumSirasiA = getDurumSirasi(a.durum);
         const durumSirasiB = getDurumSirasi(b.durum);
         if (durumSirasiA < durumSirasiB) return -1;
@@ -707,7 +645,6 @@ function renderEksikMesaiRaporu(data, baslangic, bitis) {
         if (sureA < sureB) return -1;
         if (sureA > sureB) return 1;
         // ================================
-        // 3. Aşama (Opsiyonel): Eğer durumlar da aynıysa isme göre sırala
         const adSoyadA = `${a.ad} ${a.soyad}`;
         const adSoyadB = `${b.ad} ${b.soyad}`;
         return adSoyadA.localeCompare(adSoyadB, 'tr');
@@ -720,9 +657,8 @@ function renderEksikMesaiRaporu(data, baslangic, bitis) {
         const dakika = toplamMesai % 60;
         const durum = p.durum;
 
-        // YENİ: Duruma göre satırlara farklı sınıflar ekliyoruz
         if (durum.includes('izinli')) {
-            tr.classList.add('izinli-gun'); // Mavi arka plan için
+            tr.classList.add('izinli-gun'); 
         } else if (durum === 'Devamsız') {
             tr.classList.add('devamsiz-gun');
         } else if (toplamMesai < 480) {
@@ -755,22 +691,6 @@ function renderEksikMesaiRaporu(data, baslangic, bitis) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-// raporlar.js dosyanızdaki bu fonksiyonu değiştirin
-
-/**
- * HTML tablosundaki veriyi ve satır renklerini koruyarak Excel dosyası oluşturur.
- */
 async function exportTableToExcel() {
     const tabloBaslik = document.getElementById('rapor-tablo-baslik');
     const tabloGovdesi = document.getElementById('rapor-tablo-govdesi');
@@ -784,13 +704,11 @@ async function exportTableToExcel() {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Rapor');
 
-    // Başlık Ekleme
     const anaBaslik = worksheet.addRow([raporAdi]);
     anaBaslik.font = { size: 16, bold: true };
     worksheet.mergeCells(`A1:${String.fromCharCode(64 + tabloBaslik.rows[0].cells.length)}1`);
     worksheet.addRow([]); // Boş satır
 
-    // Sütun Başlıklarını Ekleme ve Stillendirme
     const headerRowData = Array.from(tabloBaslik.querySelectorAll('th')).map(th => th.innerText);
     const headerRow = worksheet.addRow(headerRowData);
     headerRow.eachCell((cell) => {
@@ -800,19 +718,17 @@ async function exportTableToExcel() {
         cell.border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
     });
 
-    // Veri Satırlarını ve Koşullu Renkleri Ekleme
     Array.from(tabloGovdesi.rows).forEach(tableRow => {
         const rowData = Array.from(tableRow.cells).map(cell => cell.innerText);
         const row = worksheet.addRow(rowData);
 
-        // Satırın CSS sınıfına göre rengini belirle
         let fillColor = null;
         if (tableRow.classList.contains('kritik-gecikme') || tableRow.classList.contains('onemli-mesai')) {
-            fillColor = 'FFFFEBEE'; // Açık Kırmızı
+            fillColor = 'FFFFEBEE'; 
         } else if (tableRow.classList.contains('devamsiz-gun')) {
-            fillColor = 'FFF1F3F5'; // Açık Gri
+            fillColor = 'FFF1F3F5'; 
         } else if (tableRow.classList.contains('izinli-gun')) {
-            fillColor = 'FFE7F1FF'; // Açık Mavi
+            fillColor = 'FFE7F1FF'; 
         }
 
         if (fillColor) {
@@ -822,7 +738,6 @@ async function exportTableToExcel() {
         }
     });
 
-    // Sütun Genişliklerini Ayarla
     worksheet.columns.forEach(column => {
         let maxLen = 0;
         column.eachCell({ includeEmpty: true }, (cell) => {
@@ -831,7 +746,6 @@ async function exportTableToExcel() {
         column.width = maxLen < 15 ? 15 : maxLen + 2;
     });
 
-    // Dosyayı Oluştur ve İndir
     workbook.xlsx.writeBuffer().then((buffer) => {
         saveAs(new Blob([buffer]), `${raporAdi}.xlsx`);
     });

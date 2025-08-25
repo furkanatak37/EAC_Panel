@@ -1,5 +1,9 @@
-﻿//import { compressIcon, expandIcon } from './icons.js'; 
-
+﻿//===================================================================
+//Muhammed Furkan Atak
+//furkanatak.work@gmail.com
+//05362058576
+//tarih : 08/25/25
+//===================================================================
 
 const personelInfoIcerik = document.getElementById('personel-info-icerik');
 const personelListesi = document.getElementById('personelListesi');
@@ -8,17 +12,14 @@ const adFiltreInput = document.getElementById('adFiltre');
 const firmaFiltre = document.getElementById('firmaFiltre');
 const altfirmaFiltre = document.getElementById('altfirmaFiltre');
 const departmanFiltre = document.getElementById('departmanFiltre');
-//event listener lar
 document.addEventListener('DOMContentLoaded', initializePage);
 adFiltreInput.addEventListener('input', debounce(applyFilters, 300));
-//departmanFiltreSelect.addEventListener('change', applyFilters);
 const firmaFiltreSelect = document.getElementById('firmaFiltre');
 
-//buton tanımlamaları
 
 const modalBody = document.getElementById('modal-body-content');
 let aktifGrafikVerisi = [];
-let guncelGrafikVerisi = []; // YENİ
+let guncelGrafikVerisi = []; 
 const kisiDetayBaslik = document.getElementById('kisiDetayBaslik');
 const barChartContainer = document.getElementById('barChartContainer');
 const donutChartContainer = document.getElementById('donutChartContainer');
@@ -34,37 +35,27 @@ let durumChart = null;
 let allPersonnel = [];
 
 
+
+
+//mesai ve donut grafiğinin renk ayarları
+
 const CHART_COLORS = {
     normal: 'rgba(40, 167, 69, 0.7)',
-    eksik: 'rgba(220, 53, 69, 0.7)',    // Canlı Kırmızı (Hatalı/Eksik durumlar için)
-    // Canlı Kırmızı (Hatalı/Eksik durumlar için)
-    fazla: 'rgba(13, 110, 253, 0.7)',   // Mavi (Pasta grafikteki fazla mesai için)
-    izin: 'rgba(13, 202, 240, 0.3)',    // YENİ: Açık Mavi (İzin Rengi)
-
-    // Kenarlıklar için renklerin opak olmayan (tam renk) halleri
+    eksik: 'rgba(220, 53, 69, 0.7)',    
+    fazla: 'rgba(13, 110, 253, 0.7)',   
+    izin: 'rgba(13, 202, 240, 0.3)',    
     normal_border: 'rgba(40, 167, 69, 1)',
     eksik_border: 'rgba(220, 53, 69, 1)',
     fazla_border: 'rgba(13, 110, 253, 1)',
 };
 
-// script.js (Eski createBarChart ve ilgili fonksiyonları silip bunları ekleyin)
 
-// Yeni global değişkenler
 const grafikBaslangicInput = document.getElementById('grafikBaslangic');
 const grafikBitisInput = document.getElementById('grafikBitis');
 const eksikMesaiFiltre = document.getElementById('eksikMesaiFiltre');
 const grafikOzetKutusu = document.getElementById('grafik-ozet-kutusu');
 
-/**
- * Gelişmiş Mesai (Gantt) Grafiğini oluşturur ve yönetir.
- */
 
-
-// script.js dosyanızda bu iki fonksiyonu aşağıdakiyle değiştirin
-
-/**
- * Filtrelere göre veriyi işler, özet kutusunu günceller ve grafiği çizer.
- */
 
 function resetFilters(seviye) {
     if (seviye === 'altfirma' || seviye === 'departman') {
@@ -77,25 +68,14 @@ function resetFilters(seviye) {
     }
 }
 
-// === YENİ VE GELİŞTİRİLMİŞ FİLTRE YÖNETİMİ ===
 
-// Bu değişkenin sayfanızda global olarak erişilebilir olduğunu varsayıyoruz.
-// let allPersonnel = [ ... verileriniz ... ];
-
-/**
- * Filtreleri başlangıç durumuna getirmek için kullanılır.
- * Sadece en üst seviye olan "Firma" filtresini doldurur, diğerlerini sıfırlar.
- */
 function initializeFilters() {
-    // 1. Benzersiz firmaları 'allPersonnel' dizisinden al ve sırala
     const firmalar = [...new Map(allPersonnel.map(p => [p.firma, { ad: p.firma }])).values()]
-        .map(p => p.ad) // Sadece adları al
-        .sort((a, b) => a.localeCompare(b)); // Alfabetik sırala
+        .map(p => p.ad) 
+        .sort((a, b) => a.localeCompare(b)); 
 
-    // 2. Ana firma filtresini bu verilerle doldur
     populateSelect(firmaFiltre, firmalar, "Firma Seçiniz...");
 
-    // 3. Alt filtreleri temizle ve pasif hale getir
     altfirmaFiltre.innerHTML = '<option value="">Tüm Alt Firmalar</option>';
     altfirmaFiltre.disabled = true;
     departmanFiltre.innerHTML = '<option value="">Tüm Departmanlar</option>';
@@ -103,42 +83,34 @@ function initializeFilters() {
 }
 
 /**
- * Yardımcı Fonksiyon: Bir select elementini dinamik olarak doldurur.
- * @param {HTMLSelectElement} selectElement - Doldurulacak <select> elementi
- * @param {string[]} data - Seçeneklerin listesi (string array)
- * @param {string} defaultText - Varsayılan option metni (örn: "Seçiniz...")
+ * @param {HTMLSelectElement} selectElement
+ * @param {string[]} data
+ * @param {string} defaultText 
  */
 function populateSelect(selectElement, data, defaultText) {
     selectElement.innerHTML = `<option value="">${defaultText}</option>`;
     data.forEach(item => {
-        // Olası boşluk sorunlarına karşı trim() kullanmak her zaman iyidir.
         const temizItem = item.trim();
         selectElement.add(new Option(temizItem, temizItem));
     });
 }
 
-/**
- * Ana firma filtresi değiştiğinde tetiklenir.
- * İlgili alt firma ve departmanları yeniden doldurur.
- */
+
 function firmaSecildi() {
     const seciliFirma = firmaFiltre.value;
 
-    // Önce alt filtreleri sıfırla
     altfirmaFiltre.innerHTML = '<option value="">Tüm Alt Firmalar</option>';
     altfirmaFiltre.disabled = true;
     departmanFiltre.innerHTML = '<option value="">Tüm Departmanlar</option>';
     departmanFiltre.disabled = true;
 
     if (!seciliFirma) {
-        applyFilters(); // Eğer seçim kaldırıldıysa tüm listeyi göster
+        applyFilters(); 
         return;
     }
 
-    // Seçilen firmaya ait personelleri bul
     const firmaPersonelleri = allPersonnel.filter(p => p.firma === seciliFirma);
 
-    // Alt firmaları doldur ve aktifleştir
     const altFirmalar = [...new Set(firmaPersonelleri.map(p => p.altFirma).filter(Boolean))]
         .sort((a, b) => a.localeCompare(b));
 
@@ -147,7 +119,6 @@ function firmaSecildi() {
         altfirmaFiltre.disabled = false;
     }
 
-    // Departmanları doldur ve aktifleştir
     const departmanlar = [...new Set(firmaPersonelleri.map(p => p.departman).filter(Boolean))]
         .sort((a, b) => a.localeCompare(b));
 
@@ -160,10 +131,7 @@ function firmaSecildi() {
     applyFilters();
 }
 
-/**
- * Alt firma filtresi değiştiğinde tetiklenir.
- * Sadece departman filtresini günceller.
- */
+
 function altFirmaSecildi() {
     const seciliFirma = firmaFiltre.value;
     const seciliAltFirma = altfirmaFiltre.value;
@@ -196,11 +164,7 @@ function altFirmaSecildi() {
     applyFilters();
 }
 
-// BU FONKSİYON AYNI KALIYOR (TRIM() EKLEMESİYLE DAHA SAĞLAM)
-// script.js -> applyFilters fonksiyonunu güncelleyin
-
 function applyFilters() {
-    // YENİ: Filtreleme başlarken listeyi soluklaştır
     personelListesi.style.opacity = '0.5';
 
     // Arama işlemini küçük bir gecikmeyle yaparak anlık geri bildirimin görünmesini sağla
@@ -218,15 +182,10 @@ function applyFilters() {
 
         renderPersonnelList(filteredList);
 
-        // YENİ: Filtreleme bitince listeyi tekrar netleştir
         personelListesi.style.opacity = '1';
 
-    }, 50); // 50ms gecikme
+    }, 50); 
 }
-/**
- * Filtrelere göre veriyi işler, özet kutusunu günceller ve grafiği çizer.
- */
-
 
 
 
@@ -244,7 +203,6 @@ function applyFilters() {
 function generateOzetMetni(gec, erken, herIkisi, toplamGoruntulenen) {
     const metinParcalari = [];
 
-    // DÜZELTME: Her bir durumu ayrı ayrı ve net bir şekilde yazdırıyoruz.
     if (herIkisi > 0) {
         metinParcalari.push(`<div class="ozet-oge kirmizi"><strong>${herIkisi}</strong> gün hem geç gelindi hem erken çıkıldı</div>`);
     }
@@ -259,33 +217,22 @@ function generateOzetMetni(gec, erken, herIkisi, toplamGoruntulenen) {
         return `<div class="ozet-oge">Seçili aralıkta görüntülenecek veri yok.</div>`;
     }
 
-    // Toplam görüntülenen gün sayısını en sona ekle
     metinParcalari.push(`<div class="ozet-oge"><strong>${toplamGoruntulenen}</strong> gün görüntülendi</div>`);
 
     return metinParcalari.join('');
 }
 
 
-// script.js dosyanızdaki bu fonksiyonu güncelleyin
 
-/**
- * =================================================================================
- * GÜNCELLENMİŞ FONKSİYON: updateChartWithFilters
- * İzin verilerini işleme mantığı bu fonksiyona eklendi.
- * =================================================================================
- */
-
-// DOMContentLoaded bloğunun içinde
 function updateChartWithFilters() {
     const baslangic = new Date(grafikBaslangicInput.value);
     const bitis = new Date(grafikBitisInput.value);
 
-    // --- YENİ MANTIK ADIM 1: Tam bir iş günü takvimi oluştur ---
     const tumIsGunleri = [];
     let gun = new Date(baslangic);
     while (gun <= bitis) {
         const dayOfWeek = gun.getDay();
-        if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Pazar (0) ve Cumartesi (6) hariç
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) { 
             tumIsGunleri.push(new Date(gun));
         }
         gun.setDate(gun.getDate() + 1);
@@ -296,22 +243,19 @@ function updateChartWithFilters() {
     let eksikMesaiSayisi = 0;
 
     const labels = [];
-    const chartData = []; // Mesai verileri için
-    const leaveData = []; // YENİ: İzin verileri için
+    const chartData = []; 
+    const leaveData = []; 
     const backgroundColors = [];
-    let enGecCikisSaati = 18; // Varsayılan
-    let enErkenGirisSaati = 8;  // Varsayılan
+    let enGecCikisSaati = 18; 
+    let enErkenGirisSaati = 8;  
 
-    // --- YENİ MANTIK ADIM 2: Orijinal veri yerine oluşturduğumuz takvim üzerinden döngü kur ---
     tumIsGunleri.forEach(takvimGunu => {
         const tarihString = takvimGunu.toISOString().split('T')[0];
         labels.push(takvimGunu.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }));
 
-        // O takvim gününe ait veri 'aktifGrafikVerisi' içinde var mı diye kontrol et
         const gunVerisi = aktifGrafikVerisi.find(d => (d.Tarih || d.tarih).startsWith(tarihString));
 
         if (gunVerisi) {
-            // ----- MESAI VERİSİ İŞLEME (MEVCUT KISIM) -----
             const ilkGiris = new Date(gunVerisi.IlkGiris || gunVerisi.ilkGiris);
             const sonCikis = new Date(gunVerisi.SonCikis || gunVerisi.sonCikis);
             const toplamMesai = gunVerisi.ToplamMesaiDakika || gunVerisi.toplamMesaiDakika || 0;
@@ -330,14 +274,12 @@ function updateChartWithFilters() {
             chartData.push(barData);
             backgroundColors.push(isCalismaSuresiEksik ? CHART_COLORS.eksik : CHART_COLORS.normal);
 
-            // Dinamik eksenler için en erken ve en geç saatleri bul
             const cikisSaatiDecimal = sonCikis.getHours() + sonCikis.getMinutes() / 60;
             if (cikisSaatiDecimal > enGecCikisSaati) enGecCikisSaati = cikisSaatiDecimal;
             const girisSaatiDecimal = ilkGiris.getHours() + ilkGiris.getMinutes() / 60;
             if (girisSaatiDecimal < enErkenGirisSaati) enErkenGirisSaati = girisSaatiDecimal;
 
        
-            // ----- YENİ: İZİN VERİSİ İŞLEME KISMI -----
             const izinBas = gunVerisi.izinBasTarih
                 ? new Date(String(gunVerisi.izinBasTarih).replace(" ", "T"))
                 : null;
@@ -352,87 +294,35 @@ function updateChartWithFilters() {
                 const izinBasSaat = izinBas.getHours() + izinBas.getMinutes() / 60;
                 const izinBitSaat = izinBit.getHours() + izinBit.getMinutes() / 60;
 
-                // Eğer başlangıç ve bitiş aynıysa veya her ikisi de gece 12 ise, tam gün izin olarak kabul et (9 saatlik bar)
                 if (izinBas.getTime() === izinBit.getTime() || (izinBasSaat === 0 && izinBitSaat === 0)) {
-                    // Mesai başlangıç ve bitişini (örn: 08:30 - 17:30) baz alarak 9 saatlik bir bar oluştur
                     leaveData.push([8.5, 17.5]);
                 } else {
-                    // Belirtilen saat aralığını kullan
                     leaveData.push([izinBasSaat, izinBitSaat]);
                 }
             } else {
-                // O gün için izin verisi yoksa, boşluk bırak
                 leaveData.push(null);
             }
 
         } else {
-            // Eğer o gün veri YOKSA (devamsız), hem mesai hem de izin için grafikte boşluk bırak
             chartData.push(null);
-            leaveData.push(null); // İzin verisini de boş bırak
+            leaveData.push(null); 
             backgroundColors.push('transparent');
         }
     });
 
-    // Excel'e aktarılacak olan veriyi de bu yeni tam listeye göre güncelle
     guncelGrafikVerisi = aktifGrafikVerisi.filter(d => {
         const tarih = new Date(d.Tarih || d.tarih);
         return tarih >= baslangic && tarih <= bitis;
     });
 
-    // Özet Kutusunu Güncelle
     grafikOzetKutusu.innerHTML = `
         <div class="ozet-oge kirmizi"><strong>${eksikMesaiSayisi}</strong> gün eksik mesai yapıldı</div>
         <div class="ozet-oge"><strong>${labels.length}</strong> iş günü görüntülendi</div>
     `;
 
-    // Grafiği çiz ve YENİ İZİN VERİSİNİ de gönder
     drawGanttChart(labels, chartData, backgroundColors, leaveData, enGecCikisSaati, enErkenGirisSaati);
 }
 
-
-/**
- * =================================================================================
- * GÜNCELLENMİŞ FONKSİYON: drawGanttChart
- * İkinci bir dataset (izinler için) ve dinamik tooltip mantığı eklendi.
- * =================================================================================
- */
-/**
- * =================================================================================
- * GÜNCELLENMİŞ FONKSİYON: drawGanttChart
- * getContext('2d') yazım hatası düzeltildi.
- * =================================================================================
- */
-/**
- * =================================================================================
- * GÜNCELLENMİŞ FONKSİYON: drawGanttChart
- * - Barların üst üste binmesi (overlap) sağlandı.
- * - Bar kalınlıkları orijinal haline getirildi.
- * - İzin barının saydamlığı artırıldı.
- * =================================================================================
- */
-/**
- * =================================================================================
- * GÜNCELLENMİŞ FONKSİYON: drawGanttChart
- * - Veri setlerinin çizim sırası `order` özelliği ile garanti altına alındı.
- * - 'İzin Aralığı' her zaman 'Çalışma Aralığı'nın üzerinde çizilecek.
- * =================================================================================
- */
-/**
- * =================================================================================
- * GÜNCELLENMİŞ FONKSİYON: drawGanttChart (Kesin Çözüm)
- * - Veri setlerinin dizideki sırası değiştirilerek çizim önceliği sorunu çözüldü.
- * - Saydam 'İzin Aralığı' artık ilk sırada (arkada) çiziliyor.
- * =================================================================================
- */
-/**
- * =================================================================================
- * GÜNCELLENMİŞ FONKSİYON: drawGanttChart (Nihai Çözüm)
- * - YAN YANA GELME SORUNU: Her iki veri setine de aynı `stack` adı verilerek
- * Chart.js'in onları aynı alana çizmesi sağlandı.
- * - GÖRÜNÜRLÜK SORUNU: Opak olan "Çalışma Aralığı" veri seti ilk sıraya,
- * saydam olan "İzin Aralığı" ikinci sıraya alınarak doğru çizim sırası garanti edildi.
- * =================================================================================
- */
 function drawGanttChart(labels, chartData, backgroundColors, leaveData, enGecCikis, enErken) {
     if (mesaiChart) {
         mesaiChart.destroy();
@@ -458,16 +348,13 @@ function drawGanttChart(labels, chartData, backgroundColors, leaveData, enGecCik
         data: {
             labels: labels,
             datasets: [
-                // 1. ÖNCE BU ÇİZİLECEK (ARKADA)
                 {
                     
                     data: chartData,
                     backgroundColor: backgroundColors,
                     borderSkipped: false,
-                    // YENİ: Bu seti 'gantt' yığınına ata
                     order: 2
                 },
-                // 2. SONRA BU ÇİZİLECEK (ÖNDE, ÜSTTE)
                 {
                     label: 'İzin Aralığı',
                     data: leaveData,
@@ -475,7 +362,6 @@ function drawGanttChart(labels, chartData, backgroundColors, leaveData, enGecCik
                     borderColor: 'rgba(0, 123, 255, 1)',
                     borderWidth: 1,
                     borderSkipped: false,
-                    // YENİ: Bu seti de 'gantt' yığınına ata. İsimler aynı olmalı!
                     order:1
                 }
             ]
@@ -513,7 +399,7 @@ function drawGanttChart(labels, chartData, backgroundColors, leaveData, enGecCik
                     mode: 'index',
                     intersect: false,
                     position: 'nearest',  
-                    yAlign: 'center',      // dikeyde ortala
+                    yAlign: 'center',    
                     xAlign: 'auto',
                     callbacks: {
                         label: function (context) {
@@ -579,11 +465,10 @@ function drawGanttChart(labels, chartData, backgroundColors, leaveData, enGecCik
     });
 }
 function createAdvancedBarChart(apiData) {
-    aktifGrafikVerisi = apiData; // Veriyi global değişkene ata
+    aktifGrafikVerisi = apiData; 
     const excelButonu = document.getElementById('grafik-excel-btn');
     excelButonu.addEventListener('click', exportChartDataToExcel);
-    // Tarih aralığı seçicilerini ayarla
-    // Varsayılan olarak son 30 günü göster
+   
     const bitisTarihi = new Date();
     const baslangicTarihi = new Date();
     baslangicTarihi.setDate(bitisTarihi.getDate() - 30);
@@ -591,13 +476,11 @@ function createAdvancedBarChart(apiData) {
     grafikBaslangicInput.value = baslangicTarihi.toISOString().split('T')[0];
     grafikBitisInput.value = bitisTarihi.toISOString().split('T')[0];
 
-    // Filtreleme kontrollerine olay dinleyicileri ata
     grafikBaslangicInput.addEventListener('change', updateChartWithFilters);
     grafikBitisInput.addEventListener('change', updateChartWithFilters);
     eksikMesaiFiltre.addEventListener('change', updateChartWithFilters);
 
 
-    // Grafiği ilk kez çiz
     updateChartWithFilters();
 }
 
@@ -662,12 +545,10 @@ function personelleriGetir() {
 
 
             if (userIdFromUrl) {
-                // Not: UserID'ler string veya number olabilir, gevşek karşılaştırma (==) kullanalım.
                 const person = allPersonnel.find(p => (p.userID || p.UserID) == userIdFromUrl);
                 const listItem = personelListesi.querySelector(`li[data-userid='${userIdFromUrl}']`);
 
                 if (person && listItem) {
-                    // Eğer personel ve liste elemanı bulunduysa, kisiSecildi fonksiyonunu otomatik olarak çağır
                     console.log(`URL'den gelen ${userIdFromUrl} ID'li kişi otomatik seçiliyor...`);
                     kisiSecildi(person.userID || person.UserID, `${person.ad} ${person.soyad}`, listItem);
                 } else {
@@ -680,14 +561,11 @@ function personelleriGetir() {
         });
 }
 
-// --- Olay Dinleyicileri ---
 adFiltreInput.addEventListener('input', applyFilters);
 departmanFiltre.addEventListener('change', applyFilters);
 firmaFiltre.addEventListener('change', firmaSecildi);
 altfirmaFiltre.addEventListener('change', altFirmaSecildi);
-//filtreTemizleBtn.addEventListener('click', clearFilters);
 
-// --- Uygulamayı Başlat ---
 personelleriGetir();
 
 
@@ -704,13 +582,7 @@ function populateInitialFilters() {
     firmalar.forEach(firma => firmaFiltre.add(new Option(firma, firma)));
 }
 
-// script.js dosyanızdaki bu fonksiyonu güncelleyin
-
-/**
- * API'den gelen veriye göre firma filtresi dropdown'ını doldurur.
- */
 function populateFirmaFilter() {
-    // API'den gelen yanıttaki 'Firma' anahtarını küçük harfe çevirdiğimiz için 'firma' olarak okuyoruz.
     const firmalar = [...new Set(allPersonnel.map(p => p.firma).filter(Boolean))];
     firmalar.sort();
 
@@ -734,7 +606,6 @@ function applyFilters() {
     if (altFirmaFilter) filteredList = filteredList.filter(p => p.altFirma === altFirmaFilter);
     if (depFilter) filteredList = filteredList.filter(p => p.departman === depFilter);
     if (nameFilter) {
-        // DÜZELTME: Veri de aynı şekilde Türkçe'ye özel olarak küçük harfe çevrildi.
         filteredList = filteredList.filter(p =>
             `${p.ad} ${p.soyad}`.toLocaleLowerCase('tr-TR').includes(nameFilter)
         );
@@ -743,7 +614,6 @@ function applyFilters() {
     renderPersonnelList(filteredList);
 }
 
-//gunSeciciSelect.addEventListener('change', handleGunSeciciChange);
 function renderPersonnelList(personnel) {
     personelListesi.innerHTML = '';
 
@@ -818,14 +688,6 @@ function displayDailyDetails(secilenGun) {
 }
 
 
-// =================================================================================
-// VERİ İŞLEME VE GRAFİK OLUŞTURMA FONKSİYONLARI
-// =================================================================================
-
-// script.js dosyanızdaki bu fonksiyonu değiştirin
-
-// script.js dosyanızdaki bu fonksiyonu değiştirin
-
 
 
 async function fetchAndDisplayPersonelInfo(userId) {
@@ -834,7 +696,6 @@ async function fetchAndDisplayPersonelInfo(userId) {
         const response = await fetch(`/api/data/getinfo/${userId}`);
         if (!response.ok) throw new Error('Personel bilgileri API\'den alınamadı.');
 
-        // DÜZELTME: Gelen JSON'da tek bir eleman olduğu için ilkini ([0]) alıyoruz.
         const infoDataArray = await response.json();
         if (!infoDataArray || infoDataArray.length === 0) throw new Error("Personel bilgisi boş geldi.");
         const infoData = infoDataArray[0];
@@ -898,16 +759,12 @@ function kisiSecildi(userId, adSoyad, clickedListItem) {
     fetchAndDisplayPersonelInfo(userId);
 
     kisiDetayBaslik.textContent = `${adSoyad} - Mesai Detayları`;
-    // gunlukDetayKutusu.innerHTML = 'Veriler yükleniyor...';
 
     kisiDetayBaslik.style.display = 'block';
-    // gunlukDetayKutusu.style.display = 'block';
     personelInfoKarti.style.display = 'flex';
-    // anaGrafikAlani.style.display = 'flex';
 
     if (mesaiChart) mesaiChart.destroy();
     if (durumChart) durumChart.destroy();
-    // gunSeciciSelect.innerHTML = '<option value="">Yükleniyor...</option>';
 
 
     fetch(`/api/data/mesai/${userId}`)
@@ -919,7 +776,6 @@ function kisiSecildi(userId, adSoyad, clickedListItem) {
 
                 chartsSectionContainer.style.display = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!';
                 personelInfoKarti.style.display = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!';
-                //   anaGrafikAlani.style.display = '!! Bu kişiye ait görüntülenecek mesai verisi bulunamadı. !!';
                 return;
             }
 
@@ -928,13 +784,12 @@ function kisiSecildi(userId, adSoyad, clickedListItem) {
 
             const processedData = processChartData(apiData);
 
-            createAdvancedBarChart(apiData); // Yeni Gantt grafiğini başlatır
-            createDoughnutChart(processChartData(apiData).donutData); // Pasta grafik aynı kalabilir
+            createAdvancedBarChart(apiData); 
+            createDoughnutChart(processChartData(apiData).donutData);
 
         })
         .catch(error => {
             console.error('Mesai detayı alınırken hata:', error);
-            // gunlukDetayKutusu.innerHTML = 'Mesai verileri yüklenirken bir hata oluştu.';
         });
 
 
@@ -951,16 +806,10 @@ function kisiSecildi(userId, adSoyad, clickedListItem) {
  */
 
 
-// script.js dosyanızdaki bu fonksiyonu da değiştirin
-
-// script.js dosyanızdaki bu fonksiyonu da değiştirin
-
-
 
 
 function processChartData(apiData) {
     const barData = { tarihler: [], mesaiDakika: [], backgroundColors: [], borderColors: [] };
-    // DÜZELTME: 'donutData' artık üç kategoriyi sayacak.
     const donutData = { tam_mesai: 0, sadece_eksik: 0 };
 
     apiData.forEach(gunlukVeri => {
@@ -973,14 +822,12 @@ function processChartData(apiData) {
         const isGec = ilkGiris > new Date(tarih).setHours(9, 0, 0);
         const isErken = sonCikis < new Date(tarih).setHours(17, 0, 0);
 
-        // Bar grafik verileri aynı kalabilir...
         barData.tarihler.push(tarih.toLocaleDateString('tr-TR'));
         barData.mesaiDakika.push(gunlukVeri.ToplamMesaiDakika || gunlukVeri.toplamMesaiDakika);
         barData.borderColors.push((isGec || isErken) ? CHART_COLORS.eksik_border : CHART_COLORS.normal_border);
 
         const toplamMesai = gunlukVeri.ToplamMesaiDakika || gunlukVeri.toplamMesaiDakika || 0;
 
-        // DÜZELTME 1: Renkler artık 8 saat (480 dk) kuralına göre belirleniyor
         const isCalismaSuresiEksik = toplamMesai < 480;
 
         if (isCalismaSuresiEksik) {
@@ -996,21 +843,17 @@ function createDoughnutChart(donutData) {
     donutChartContainer.style.display = 'flex';
     const ctx = document.getElementById('durumChart').getContext('2d');
 
-    // DÜZELTME: Veri artık 3 bölümden oluşuyor.
     const dataValues = [donutData.tam_mesai, donutData.sadece_eksik];
     const total = dataValues.reduce((acc, val) => acc + val, 0);
 
-    // Yeni renkler tanımlayalım
-    const hemEksikColor = 'rgba(255, 159, 64, 0.7)'; // Turuncu gibi bir ara renk
+    const hemEksikColor = 'rgba(255, 159, 64, 0.7)'; 
 
     durumChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            // DÜZELTME: Etiketler 3'e çıkarıldı.
             labels: ['Tam Mesai Günü', 'Sadece Eksik Mesai'],
             datasets: [{
                 data: dataValues,
-                // DÜZELTME: Renkler 3'e çıkarıldı.
                 backgroundColor: [CHART_COLORS.normal, CHART_COLORS.eksik],
                 borderColor: ['#fff'],
                 borderWidth: 2
@@ -1026,7 +869,7 @@ function createDoughnutChart(donutData) {
                 },
                 datalabels: {
                     formatter: (value, context) => {
-                        if (total === 0 || value === 0) return ''; // 0% olanları gösterme
+                        if (total === 0 || value === 0) return ''; 
                         const percentage = (value / total * 100).toFixed(1) + '%';
                         return percentage;
                     },
@@ -1085,16 +928,6 @@ function closeAllModals() {
 
 
 
-
-
-// =================================================================================
-// RAPOR SEKMELERİ MANTIĞI
-// =================================================================================
-
-
-// =================================================================================
-// GRAFİK SEKMELERİ MANTIĞI
-// =================================================================================
 const grafikSekmeleriContainer = document.querySelector('.grafik-sekmeleri');
 const grafikIcerikAlanlari = document.querySelectorAll('.grafik-icerik-alani');
 
@@ -1118,22 +951,17 @@ grafikSekmeleriContainer.addEventListener('click', (event) => {
 });
 
 
-// =================================================================================
-// RAPORLAR AÇILIR MENÜ MANTIĞI
-// =================================================================================
 const raporlarBtn = document.getElementById('raporlar-btn');
 const raporlarDropdown = document.getElementById('raporlar-dropdown-icerik');
 
 raporlarBtn.addEventListener('click', () => {
-    // Menüyü aç/kapat
     raporlarDropdown.classList.toggle('show');
 });
 
-// Menü dışına tıklandığında menüyü kapat
 window.addEventListener('click', (event) => {
-    // Eğer tıklanan yer buton değilse...
+    
     if (!event.target.matches('#raporlar-btn, #raporlar-btn *')) {
-        // ...ve eğer menü açıksa, menüyü kapat.
+       
         if (raporlarDropdown.classList.contains('show')) {
             raporlarDropdown.classList.remove('show');
         }
@@ -1145,7 +973,6 @@ window.addEventListener('click', (event) => {
 
 
 
-// script.js dosyasının en altına, diğer fonksiyonların yanına ekleyin
 
 /**
  * Bir fonksiyonun belirli bir süre içinde tekrar tekrar çalışmasını engeller (Debounce).
@@ -1162,30 +989,17 @@ function debounce(func, delay) {
     };
 }
 
-/**
- * Kişiye özel grafik verilerini formatlayıp Excel dosyası olarak indirir.
- */
-// script.js dosyanızdaki bu fonksiyonu değiştirin
 
-/**
- * Kişiye özel grafik verilerini formatlayıp, iki sekmeli (Tüm Günler ve Eksik Mesailer)
- * bir Excel dosyası olarak indirir.
- */
-/**
- * Kişiye özel grafik verilerini ExcelJS kullanarak formatlar ve renkli bir şekilde indirir.
- */
 async function exportChartDataToExcel() {
     if (!guncelGrafikVerisi || guncelGrafikVerisi.length === 0) {
         alert("Aktarılacak veri bulunamadı.");
         return;
     }
 
-    // 1. Gerekli Bilgileri Topla
     const adSoyad = document.getElementById('kisiDetayBaslik').textContent.replace(' - Mesai Detayları', '');
     const baslangic = document.getElementById('grafikBaslangic').value;
     const bitis = document.getElementById('grafikBitis').value;
 
-    // YENİ: İlk veri satırından ek bilgileri al
     const ilkKayit = guncelGrafikVerisi[0];
     const sicilId = ilkKayit.SicilID || ilkKayit.sicilID || 'N/A';
     const personelNo = ilkKayit.PersonelNo || ilkKayit.personelNo || 'N/A';
@@ -1193,19 +1007,15 @@ async function exportChartDataToExcel() {
     const userId = ilkKayit.UserID || ilkKayit.userID || 'N/A';
 
 
-    // 2. Yeni Bir Excel Çalışma Kitabı Oluştur
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Mesai Detay Raporu');
 
-    // 3. Başlık Bilgilerini Ekle ve Stillendir
-    // DÜZELTME: Başlığa yeni bilgiler eklendi
     worksheet.addRow(["Personel Adı:", adSoyad]);
     worksheet.addRow(["Personel No:", personelNo, "", "Sicil ID:", sicilId]);
     worksheet.addRow(["UserID:", userId, "", "Card ID:", cardId]);
     worksheet.addRow(["Rapor Tarih Aralığı:", `${baslangic} - ${bitis}`]);
-    worksheet.addRow([]); // Boş satır
+    worksheet.addRow([]); 
 
-    // Hücreleri birleştir ve stil ver
     worksheet.mergeCells('B1:E1');
     worksheet.mergeCells('B2:C2'); worksheet.mergeCells('E2:F2');
     worksheet.mergeCells('B3:C3'); worksheet.mergeCells('E3:F3');
@@ -1214,7 +1024,6 @@ async function exportChartDataToExcel() {
     [1, 2, 3, 4].forEach(i => {
         worksheet.getRow(i).font = { bold: true, size: 12 };
     });
-    // 4. Sütun Başlıklarını Ekle ve Stillendir
     const sutunBasliklari = ['Tarih', 'İlk Giriş', 'Son Çıkış', 'Toplam Süre', 'Durum'];
     const headerRow = worksheet.addRow(sutunBasliklari);
     headerRow.eachCell((cell) => {
@@ -1222,14 +1031,13 @@ async function exportChartDataToExcel() {
         cell.fill = {
             type: 'pattern',
             pattern: 'solid',
-            fgColor: { argb: 'FF495057' } // Koyu Gri
+            fgColor: { argb: 'FF495057' } 
         };
         cell.border = {
             bottom: { style: 'thin', color: { argb: 'FF000000' } }
         };
     });
 
-    // 5. Veri Satırlarını Ekle ve Koşullu Renklendir
     guncelGrafikVerisi.forEach(d => {
         const tarih = new Date(d.Tarih || d.tarih);
         const ilkGiris = new Date(d.IlkGiris || d.ilkGiris);
@@ -1250,29 +1058,26 @@ async function exportChartDataToExcel() {
 
         const row = worksheet.addRow(rowData);
 
-        // EĞER GÜN EKSİK MESAİ İSE, SATIRI KIRMIZIYA BOYA
         if (isEksik) {
             row.eachCell((cell) => {
                 cell.fill = {
                     type: 'pattern',
                     pattern: 'solid',
-                    fgColor: { argb: 'FFFFEBEE' } // Çok açık kırmızı
+                    fgColor: { argb: 'FFFFEBEE' } 
                 };
                 cell.font = {
-                    color: { argb: 'FF9C0006' } // Koyu kırmızı yazı
+                    color: { argb: 'FF9C0006' } 
                 }
             });
         }
     });
 
-    // 6. Sütun Genişliklerini Ayarla
     worksheet.getColumn(1).width = 15;
     worksheet.getColumn(2).width = 15;
     worksheet.getColumn(3).width = 15;
     worksheet.getColumn(4).width = 20;
     worksheet.getColumn(5).width = 15;
 
-    // 7. Dosyayı Oluştur ve İndir
     workbook.xlsx.writeBuffer().then((buffer) => {
         saveAs(new Blob([buffer]), `${adSoyad} Mesai Raporu.xlsx`);
     });

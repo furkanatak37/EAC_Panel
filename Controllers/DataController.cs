@@ -1,4 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿//===================================================================
+//Muhammed Furkan Atak 
+//furkanatak.work@gmail.com
+//05362058576
+//tarih : 08/25/25
+//===================================================================
+
+
+//bu sorgudaki sql kodları meyer database ine procodure olarak eklenebilir
+
+
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.Data.SqlClient;
@@ -12,8 +23,14 @@ namespace WebApplication1.Controllers
     [ApiController]
     public class DataController : ControllerBase
     {
-        private readonly string _connectionString = "Data Source=srvpmeyerdb01\\MSSQL_MEYER;Initial Catalog=TPANGEL15130_Meyer;Integrated Security=True;Pooling=False;Connect Timeout=30;Trust Server Certificate=True;Application Name=vscode-mssql;Application Intent=ReadWrite;Command Timeout=30";
 
+
+        private readonly string _connectionString;
+
+        public DataController(IConfiguration configuration)
+        {
+            _connectionString = configuration.GetConnectionString("DefaultConnection");
+        }
         [HttpGet("testconnection")]
         public async Task<IActionResult> TestConnection()
         {
@@ -31,88 +48,7 @@ namespace WebApplication1.Controllers
             }
         }
 
-        [HttpGet("getinfoDetay/{userId}")]
-        public IActionResult GetinfoDetay(int userId)
-        {
-            var result = new List<object>();
-            using (SqlConnection conn = new SqlConnection(_connectionString))
-            {
-                conn.Open();
-
-                // DÜZELTME: Sorgudaki JOIN şartı ve C# kodundaki anahtar adı düzeltildi.
-                string query = @"
-            WITH YetkiListesi AS (
-                SELECT 
-                    s1.UserID,
-                    STUFF(
-                        (
-                            SELECT DISTINCT ', ' + y.Aciklama
-                            FROM (
-                                SELECT CAST('<M>' + REPLACE(s1.yetkistr, ';', '</M><M>') + '</M>' AS XML) AS x
-                            ) AS a
-                            CROSS APPLY a.x.nodes('/M') AS Split(b)
-                            JOIN Yetki y ON y.ID = Split.b.value('.', 'int')
-                            WHERE s1.yetkistr IS NOT NULL AND Split.b.value('.', 'varchar(50)') <> ''
-                            FOR XML PATH(''), TYPE
-                        ).value('.', 'NVARCHAR(MAX)'), 1, 2, ''
-                    ) AS YetkiAciklamalari
-                FROM Sicil s1
-                WHERE s1.UserID = @userId
-            )
-            SELECT 
-                s.*, 
-                p.fotoimage, 
-                y.YetkiAciklamalari,
-                b.Ad AS Departman
-            FROM Sicil s
-            -- DÜZELTME 1: JOIN şartı, personel ID'si üzerinden olacak şekilde güncellendi.
-            LEFT JOIN SicilFoto p ON s.ID = p.sicilid 
-            LEFT JOIN YetkiListesi y ON s.UserID = y.UserID
-            LEFT JOIN cbo_bolum b ON s.Bolum = b.ID
-            WHERE s.UserID = @userId;
-        ";
-
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@userId", userId);
-                    using (SqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            var personelData = new Dictionary<string, object>();
-                            for (int i = 0; i < reader.FieldCount; i++)
-                            {
-                                var colName = reader.GetName(i).ToLower();
-                                var colValue = reader.GetValue(i);
-
-                                var atlanacakKolonlar = new List<string> { "bolum", "firma", "pozisyon", "altfirma", "degistiren", "fotoimage", "yetkistr" };
-                                if (atlanacakKolonlar.Contains(colName))
-                                {
-                                    continue;
-                                }
-
-                                // Bu if bloğu artık gereksiz çünkü 'fotoimage' atlanacakKolonlar listesinde
-                                // Ancak Base64 dönüşümü için ayrı bir kontrol ekliyoruz.
-                                if (colValue != DBNull.Value)
-                                {
-                                    personelData[colName] = colValue;
-                                }
-                            }
-
-                            // DÜZELTME 2: Fotoğrafı ayrı olarak oku ve anahtarı küçük harfle ekle.
-                            if (reader["fotoimage"] != DBNull.Value)
-                            {
-                                byte[] fotoBytes = (byte[])reader["fotoimage"];
-                                personelData["fotobase64"] = Convert.ToBase64String(fotoBytes);
-                            }
-
-                            result.Add(personelData);
-                        }
-                    }
-                }
-            }
-            return Ok(result);
-        }
+        
 
         [HttpGet("getinfo/{userId}")]
         public IActionResult Getinfo(int userId)
@@ -125,22 +61,21 @@ namespace WebApplication1.Controllers
 
                 string query = @"
           SELECT
-    s.*, -- Sicil tablosundaki tüm kolonları getirir
-    P.fotoimage, -- SicilFoto tablosundan fotoğrafı getirir
-    B.Ad AS Departman -- YENİ: cbo_bolum tablosundan departman adını getirir
+    s.*, 
+    P.fotoimage, 
+    B.Ad AS Departman
 FROM
     Sicil s
 LEFT JOIN
     SicilFoto P ON s.ID = P.sicilid
 LEFT JOIN
-    cbo_bolum B ON s.Bolum = B.ID -- YENİ: Departman tablosunu ekliyoruz
+    cbo_bolum B ON s.Bolum = B.ID
 WHERE
     CAST(S.UserID AS INT) = @userId;
         ";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
-                    // Bu parametre artık WHERE şartı tarafından kullanılacak
                     cmd.Parameters.AddWithValue("@UserId", userId);
 
                     using (SqlDataReader reader = cmd.ExecuteReader())
@@ -250,10 +185,8 @@ SELECT
     S.Soyad,
     CONVERT(date, P.EventTime) AS Tarih,
     
-    -- DÜZELTME: Sadece o günkü en erken saat alınıyor
     MIN(P.EventTime) AS IlkGiris,
     
-    -- DÜZELTME: Sadece o günkü en geç saat alınıyor
     MAX(P.EventTime) AS SonCikis,
     
     DATEDIFF(MINUTE,
@@ -267,7 +200,6 @@ JOIN
 -- DÜZELTME: Terminaller tablosuna artık gerek yok
 GROUP BY
     S.UserID, S.Ad, S.Soyad, CONVERT(date, P.EventTime)
--- DÜZELTME: HAVING şartı basitleştirildi
 HAVING
     MIN(P.EventTime) < MAX(P.EventTime);
                 ";
@@ -467,7 +399,6 @@ HAVING MIN(P.EventTime) < MAX(P.EventTime);
             IF OBJECT_ID('tempdb..#GunlukMesai') IS NOT NULL
                 DROP TABLE #GunlukMesai;
 
-            -- 1. ADIM: Temel veri, sadece ilgili personeller için oluşturuluyor.
             SELECT
                 S.UserID, S.Ad, S.Soyad, B.Ad AS departman,
                 CONVERT(date, P.EventTime) AS Tarih,
@@ -479,7 +410,6 @@ HAVING MIN(P.EventTime) < MAX(P.EventTime);
             LEFT JOIN cbo_bolum B ON S.Bolum = B.ID
             WHERE 
                 CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
-                -- YENİ KURAL: Sadece aktif ve son 30 günde hareketi olan personelleri dahil et
                 AND S.GirisTarih IS NOT NULL 
                 AND S.CikisTarih IS NULL
                 AND EXISTS (
@@ -491,7 +421,7 @@ HAVING MIN(P.EventTime) < MAX(P.EventTime);
             GROUP BY S.UserID, S.Ad, S.Soyad, B.Ad, CONVERT(date, P.EventTime)
             HAVING MIN(P.EventTime) < MAX(P.EventTime);
 
-            -- SORGU 1: Personel Bazlı Özetler (Değişiklik yok)
+            -- SORGU 1: Personel Bazlı Özetler
             SELECT
                 UserID, Ad, Soyad, departman,
                 SUM(CASE WHEN IlkGiris > DATEADD(minute, 45, DATEADD(hour, 8, CAST(Tarih AS datetime))) THEN 1 ELSE 0 END) AS GecKalmaSayisi,
@@ -500,7 +430,7 @@ HAVING MIN(P.EventTime) < MAX(P.EventTime);
             FROM #GunlukMesai
             GROUP BY UserID, Ad, Soyad, departman;
 
-            -- SORGU 2: Aralığın En'leri (Değişiklik yok)
+            -- SORGU 2: Aralığın En'leri
             WITH Numaralandirilmis AS (
                 SELECT *,
                     ROW_NUMBER() OVER(PARTITION BY Tarih ORDER BY IlkGiris ASC) as rn_erken,
@@ -515,7 +445,7 @@ HAVING MIN(P.EventTime) < MAX(P.EventTime);
             WHERE E.rn_erken = 1 AND G.rn_gec = 1
             ORDER BY E.Tarih;
 
-            -- SORGU 3: Departman Bazlı Analizler (Değişiklik yok)
+            -- SORGU 3: Departman Bazlı Analizler
             SELECT
                 ISNULL(departman, 'Belirtilmemiş') AS Departman,
                 COUNT(DISTINCT UserID) as KisiSayisi,
@@ -722,7 +652,6 @@ ORDER BY Tarih, IlkGiris;
         //=================================
 
         [HttpGet("getGelmeyenler")]
-        // YENİ: Opsiyonel filtre parametreleri eklendi
         public IActionResult GetGelmeyenler([FromQuery] DateTime baslangic, [FromQuery] DateTime bitis,
                                      [FromQuery] int? departmanId, [FromQuery] int? firmaId, [FromQuery] int? altFirmaId)
         {
@@ -731,29 +660,24 @@ ORDER BY Tarih, IlkGiris;
             {
                 conn.Open();
 
-                // DÜZELTME: Sorgu, aktif personel filtresini ve opsiyonel filtreleri içerecek şekilde güncellendi.
                 string query = @"
-            -- 1. ADIM: Sadece aktif personeli (işe girmiş, çıkmamış) bir CTE'de toplayalım.
             WITH AktifPersoneller AS (
                 SELECT UserID, Ad, Soyad, Bolum, firma, altfirma, GirisTarih, CikisTarih, EMail, CepTelefon
                 FROM Sicil
                 WHERE GirisTarih IS NOT NULL AND CikisTarih IS NULL
             ),
 
-            -- 2. ADIM: Tarih aralığındaki günleri üreten takvim.
             Takvim AS (
                 SELECT CAST(@Baslangic AS DATE) AS Tarih
                 UNION ALL
                 SELECT DATEADD(day, 1, Tarih) FROM Takvim WHERE Tarih < @Bitis
             ),
 
-            -- 3. ADIM: O gün kimlerin işe geldiğini bulalım.
             GelenPersoneller AS (
                 SELECT DISTINCT CONVERT(date, P.EventTime) AS Tarih, CAST(P.UserID AS INT) AS UserID
                 FROM Pool P WHERE CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
             ),
 
-            -- 4. ADIM: O gün çalışması gereken AKTİF ve FİLTRELENMİŞ personeli bulalım.
             BeklenenGelisler AS (
                 SELECT
                     T.Tarih, S.UserID, S.Ad, S.Soyad, B.Ad AS departman, S.EMail, S.CepTelefon
@@ -770,7 +694,6 @@ ORDER BY Tarih, IlkGiris;
                     AND (@AltFirmaId IS NULL OR S.altfirma = @AltFirmaId)
             )
 
-            -- 5. ADIM: Devamsızları bulup, kişi bazında devamsızlık yaptıkları gün sayısını toplayalım.
             SELECT
                 BG.UserID, BG.Ad, BG.Soyad, BG.departman, BG.EMail, BG.CepTelefon,
                 COUNT(BG.Tarih) AS DevamsizlikGunSayisi
@@ -786,7 +709,6 @@ ORDER BY Tarih, IlkGiris;
                 {
                     cmd.Parameters.AddWithValue("@Baslangic", baslangic.Date);
                     cmd.Parameters.AddWithValue("@Bitis", bitis.Date);
-                    // YENİ: Parametreleri sorguya ekle (eğer boş ise DBNull olarak gönder)
                     cmd.Parameters.AddWithValue("@DepartmanId", (object)departmanId ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@FirmaId", (object)firmaId ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@AltFirmaId", (object)altFirmaId ?? DBNull.Value);
@@ -811,6 +733,8 @@ ORDER BY Tarih, IlkGiris;
             }
             return Ok(result);
         }
+
+        // seçilen aralıkta izinliler tablosundaki personller ve izin aralıığı bilgisini getiriyor
 
 
         [HttpGet("getIzinliler")]
@@ -930,7 +854,6 @@ ORDER BY Tarih, IlkGiris;
             {
                 conn.Open();
 
-                // DÜZELTME: Sorguya pozisyon bilgisini eklemek için cbo_pozisyon tablosu joinlendi.
                 string query = @"
             WITH AktifVeIlgiliPersoneller AS (
                 SELECT * FROM Sicil
@@ -1015,7 +938,6 @@ ORDER BY Tarih, IlkGiris;
 
 
 
-        // DataController.cs dosyanızdaki bu metodu güncelleyin
 
         [HttpGet("gec-kalma-detaylari")]
         public IActionResult GetGecKalmaDetaylari([FromQuery] int userId, [FromQuery] DateTime baslangic, [FromQuery] DateTime bitis)
@@ -1025,13 +947,10 @@ ORDER BY Tarih, IlkGiris;
             {
                 conn.Open();
 
-                // DÜZELTME: Bu sorgu artık, özet rapordaki gibi,
-                // hem giriş hem de çıkış olan günleri dikkate alacak şekilde güncellendi.
                 string query = @"
             SELECT
                 CONVERT(date, P.EventTime) AS Tarih,
                 MIN(P.EventTime) AS IlkGiris
-                -- SonCikis'i C#'a göndermeyeceğiz ama HAVING'de kullanmak için hesaplamalıyız.
             FROM Pool P
             JOIN Sicil S ON CAST(P.UserID AS INT) = S.UserID
             WHERE 
@@ -1039,10 +958,8 @@ ORDER BY Tarih, IlkGiris;
                 AND CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
             GROUP BY CONVERT(date, P.EventTime)
             HAVING 
-                -- 1. Kural: Geç kalmış olmalı (Örnek: 08:30 sonrası)
                 MIN(P.EventTime) > DATEADD(minute, 30, DATEADD(hour, 8, CAST(CONVERT(date, P.EventTime) AS datetime)))
                 
-                -- 2. YENİ KURAL: Ve o gün hem giriş hem çıkış hareketi olmalı
                 AND MIN(P.EventTime) < MAX(P.EventTime)
             ORDER BY Tarih;
         ";
@@ -1068,6 +985,7 @@ ORDER BY Tarih, IlkGiris;
             return Ok(result);
         }
 
+        // seçilen gün aralığında 8 saatten fazla çalışan personelleri getiriyor
 
         [HttpGet("fazla-mesai-detaylari")]
         public IActionResult GetFazlaMesaiDetaylari([FromQuery] int userId, [FromQuery] DateTime baslangic, [FromQuery] DateTime bitis)
@@ -1119,11 +1037,9 @@ ORDER BY Tarih, IlkGiris;
         }
 
 
-
-        // DataController.cs dosyanızdaki bu metodu güncelleyin
+        //bu sorgu eksik-mesai sorgusuna eklendi , şuan kullanılmıyor
 
         [HttpGet("getDevamsizDetay")]
-        // DÜZELTME: Metot artık isteğe bağlı bir userId parametresi alıyor
         public IActionResult GetDevamsizDetay([FromQuery] DateTime baslangic, [FromQuery] DateTime bitis, [FromQuery] int? userId)
         {
             var result = new List<object>();
@@ -1226,7 +1142,7 @@ ORDER BY Tarih, IlkGiris;
 
 
 
-
+        //filtre kısmında üst filtreden alt filtreye giderken güncelleme işlemi yapması için , örnek: tp-otc istanbul seçti firmayı alt firmalar larak o , firmanın alt firmaları listeleniyor sadece.
 
 
 
@@ -1237,7 +1153,6 @@ ORDER BY Tarih, IlkGiris;
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                // Sadece aktif personellerin filtreleme için gerekli olan bilgilerini alıyoruz.
                 string query = @"
             SELECT 
                 S.UserID,
@@ -1281,8 +1196,14 @@ ORDER BY Tarih, IlkGiris;
 
 
 
-
-
+        //=============================================================================================
+        //Bu sorgu önce şu şartları sağlayan personelleri listeler:
+        //-son 30 gün içinde pool tablosunda kaydı varmı
+        //-işe giriş tarihi girilmiş ama çıkış tarihi girilmemiş
+        //sonrasında verilen filtrele göre seçim yapar (firma,altfirma,departman), devamında ise seçilen tarih aralığında bu kişi günlük 8 saat mesai yapmışmı onu kontrol eder.(  (işten çıkış saati-giriş saati > 8 )? )
+        //not !! : terminallerden giriş çıkış kontorlu yapmıyor, sadece o gün içinde ilk okuttuğu kart bilgisi ile son okuttuğu kart bilgisini alıyor.
+        //devamsızlık rapounda ise , aftaiçi o gün işe gelmesi gerekip gelmeyenleri listeliyor, ve bu kişileri izinliler tablosundan chechk ediyor. aynı işlemi eksik mesaililer içinde yapıyor, saatlik izni varmı diye 
+        //=============================================================================================
 
         [HttpGet("eksik-mesai-ve-devamsizlik-raporu")]
         public IActionResult GetEksikMesaiVeDevamsizlikRaporu([FromQuery] DateTime baslangic, [FromQuery] DateTime bitis,
@@ -1295,11 +1216,9 @@ ORDER BY Tarih, IlkGiris;
                 conn.Open();
 
                 string query = @"
-            -- Önceki geçici tabloları temizle
             IF OBJECT_ID('tempdb..#IlgiliPersoneller') IS NOT NULL DROP TABLE #IlgiliPersoneller;
             IF OBJECT_ID('tempdb..#GunlukMesailer') IS NOT NULL DROP TABLE #GunlukMesailer;
 
-            -- 1. ADIM: İlgili personelleri bir geçici tabloya al.
             SELECT 
                 S.UserID, S.Ad, S.Soyad, S.Bolum, S.firma, S.altfirma, S.GirisTarih, S.ID AS SicilTabloID,
                 B.Ad AS DepartmanAdi, F.Ad AS FirmaAdi, AF.Ad AS AltFirmaAdi,S.SicilNo,S.PersonelNo
@@ -1318,7 +1237,6 @@ ORDER BY Tarih, IlkGiris;
                 AND (@FirmaId IS NULL OR S.firma = @FirmaId)
                 AND (@AltFirmaId IS NULL OR S.altfirma = @AltFirmaId);
 
-            -- 2. ADIM: Bu personellerin mesai verilerini başka bir geçici tabloya al.
             SELECT
     S.UserID, 
     CONVERT(date, P.EventTime) AS Tarih,
@@ -1327,7 +1245,6 @@ ORDER BY Tarih, IlkGiris;
     S.SicilNo,
     S.PersonelNo,
 
-    -- İlk giriş TerminalID -> Terminallerden Name
     (SELECT TOP 1 T.Name 
      FROM Pool P_in 
      JOIN Terminaller T ON T.ID = P_in.TerminalID
@@ -1335,7 +1252,6 @@ ORDER BY Tarih, IlkGiris;
        AND CONVERT(date, P_in.EventTime) = CONVERT(date, P.EventTime)
      ORDER BY P_in.EventTime ASC) AS Giris_Terminal,
 
-    -- Son çıkış TerminalID -> Terminallerden Name
     (SELECT TOP 1 T.Name 
      FROM Pool P_out 
      JOIN Terminaller T ON T.ID = P_out.TerminalID
@@ -1350,16 +1266,13 @@ WHERE CONVERT(date, P.EventTime) BETWEEN @Baslangic AND @Bitis
 GROUP BY S.UserID, CONVERT(date, P.EventTime), S.SicilTabloID, S.SicilNo, S.PersonelNo
 HAVING MIN(P.EventTime) < MAX(P.EventTime);
             
-            -- 3. ADIM: Takvimi oluşturalım.
             WITH Takvim AS (
                 SELECT CAST(@Baslangic AS DATE) AS Tarih
                 UNION ALL
                 SELECT DATEADD(day, 1, Tarih) FROM Takvim WHERE Tarih < @Bitis
             )
             
-            -- 4. ADIM: Sonuçları birleştir.
             SELECT * FROM (
-                -- Kısım 1: Eksik Mesai Yapanlar
 SELECT
     S.UserID, S.Ad, S.Soyad, S.DepartmanAdi, S.FirmaAdi, S.AltFirmaAdi,
     GM.Tarih, GM.ToplamMesaiDakika, S.SicilTabloID, S.SicilNo, S.PersonelNo,
@@ -1379,7 +1292,6 @@ WHERE GM.ToplamMesaiDakika < 480
 
 
                 UNION ALL
--- Kısım 2: Devamsızlık Yapanlar
 SELECT
     S.UserID, S.Ad, S.Soyad, S.DepartmanAdi, S.FirmaAdi, S.AltFirmaAdi,
     T.Tarih, 0 AS ToplamMesaiDakika, S.SicilTabloID, S.SicilNo, S.PersonelNo,
